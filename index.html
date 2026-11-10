@@ -85,7 +85,8 @@ a{color:inherit}
 .cat__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;
   transition:transform .7s var(--ease);z-index:-1}
 .cat:has(.cat__img)::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:linear-gradient(0deg,rgba(0,0,0,.88) 0,rgba(0,0,0,.6) 32%,rgba(0,0,0,0) 62%)}
+  background:linear-gradient(0deg,rgba(0,0,0,.92) 0,rgba(0,0,0,.78) 30%,rgba(0,0,0,.35) 52%,rgba(0,0,0,0) 72%)}
+.cat:has(.cat__img) .cat__txt{text-shadow:0 1px 12px rgba(0,0,0,.6)}
 
 .cat__count{position:absolute;top:12px;right:12px;min-width:24px;height:24px;padding:0 8px;border-radius:999px;
   background:rgba(0,0,0,.55);border:1px solid rgba(242,240,235,.12);display:grid;place-items:center;color:var(--soft)}
@@ -300,8 +301,9 @@ body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animat
 
 /* ---------- живые карточки ---------- */
 /* «Дополнительно»: геймпад с фишками медленно парит и чуть покачивается */
-.cat--float .cat__img{animation:hover 5.5s var(--ease-io) infinite;transform-origin:50% 60%}
-@keyframes hover{0%,100%{translate:0 0;rotate:0deg}50%{translate:0 -6px;rotate:-1.5deg}}
+/* фото чуть увеличено (запас по краям), поэтому покачивание не открывает края рамки */
+.cat--float .cat__img{scale:1.12;animation:hover 5.5s var(--ease-io) infinite;transform-origin:50% 55%}
+@keyframes hover{0%,100%{translate:0 2px;rotate:0deg}50%{translate:0 -4px;rotate:-1deg}}
 body.locked .cat--float .cat__img,body.welcoming .cat--float .cat__img{animation-play-state:paused}
 .fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;mix-blend-mode:screen}
 .cat__txt,.cat__count{z-index:1}
@@ -868,11 +870,12 @@ function renderHours(){
   const names = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
   const now = new Date(), d = now.getDay(), h = now.getHours() + now.getMinutes()/60;
   const pad = n => String(n).padStart(2,"0") + ":00";
-  $("#hours").innerHTML = [1,2,3,4,5,6,0].map(i => {
-    const cls = i === d ? "today" : "dim";
-    return `<div class="${cls}">${names[i]}${i === d ? " · сегодня" : ""}</div><div class="${cls}">${pad(HOURS[i][0])}–${pad(HOURS[i][1])}</div>`;
-  }).join("");
   const prev = (d + 6) % 7;
+  const sd = h < HOURS[prev][1] ? prev : d;   /* после полуночи «сегодня» — это ещё вчерашняя смена */
+  $("#hours").innerHTML = [1,2,3,4,5,6,0].map(i => {
+    const cls = i === sd ? "today" : "dim";
+    return `<div class="${cls}">${names[i]}${i === sd ? " · сегодня" : ""}</div><div class="${cls}">${pad(HOURS[i][0])}–${pad(HOURS[i][1])}</div>`;
+  }).join("");
   const openToday = h >= HOURS[d][0];
   const openFromYesterday = h < HOURS[prev][1];
   const open = openToday || openFromYesterday;
@@ -928,8 +931,19 @@ function photoURL(v, dir = "img/items/"){
 function table(text){
   const rows = parseCSV(text).filter(r => r.some(c => c.trim()));
   if (!rows.length) return [];
-  const head = rows[0].map(c => c.toLowerCase().replace(/ё/g, "е").replace(/\./g, "").replace(/\s+/g, " ").trim());  /* «Ед. 2» → «ед 2» */
-  return rows.slice(1).map(r => Object.fromEntries(head.map((k, i) => [k, (r[i] || "").trim()])));
+  const norm = c => c.toLowerCase().replace(/ё/g, "е").replace(/\./g, "").replace(/\s+/g, " ").trim();  /* «Ед. 2» → «ед 2» */
+  /* у колонки может быть несколько имён: «Объём / кол-во 2», «Объём (мл)» → понимаем каждую часть отдельно */
+  const names = rows[0].map(c => {
+    const full = norm(c), n = (full.match(/\s(\d)$/) || [])[1];
+    const parts = full.split(/\s*[\/(),]\s*/).map(x => x.replace(/\)$/, "").trim()).filter(Boolean)
+      .map(x => n && !/\d$/.test(x) ? `${x} ${n}` : x);
+    return [full, ...parts];
+  });
+  return rows.slice(1).map(r => {
+    const o = {};
+    names.forEach((ks, i) => ks.forEach(k => { if (!(k in o) || !o[k]) o[k] = (r[i] || "").trim(); }));
+    return o;
+  });
 }
 const pick = (o, ...keys) => { for (const k of keys) if (o[k]) return o[k]; return ""; };
 function buildMenu(menuRows, secRows){
@@ -949,7 +963,7 @@ function buildMenu(menuRows, secRows){
     const vols = [], prices = [];
     ["", " 2", " 3"].forEach(n => {
       /* «Объём» — число, «Ед.» — единица из списка (шт, л, г, час); если в «Объёме» уже есть буквы, берём как есть */
-      const num = pick(r, "объем" + n), unit = pick(r, "ед" + n, "единица" + n, "ед изм" + n);
+      const num = pick(r, "объем" + n, "кол-во" + n, "количество" + n, "вес" + n), unit = pick(r, "ед" + n, "единица" + n, "ед изм" + n);
       const v = num && unit && !/[a-zа-я]/i.test(num) ? `${num} ${unit}` : num;
       const pr = clean(pick(r, "цена" + n));
       if (n && !v && !pr) return;
