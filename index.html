@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0b">
+<title>Инкогнито — меню</title>
+<meta name="description" content="Меню кальянной «Инкогнито», Бузулук">
+<link rel="icon" type="image/png" href="img/icon-64.png">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Ч/б, одна колонка под телефон. Версия 2: классическая антиква как в логотипе, сетка категорий, категории в шторке. */
+:root{
+  --ink:#0b0b0b;        /* фон */
+  --paper:#f2f0eb;      /* основной текст, «бумага» */
+  --soft:#c9c7c2;       /* текст второго плана: описания, правила */
+  --mute:#8a8884;       /* вторичный текст: подписи, метки */
+  --line:#262624;       /* разделители */
+  --raise:#151514;      /* поднятые поверхности */
+  --display:"Cormorant Garamond", "Times New Roman", Georgia, serif;  /* как в логотипе */
+  --body:"Montserrat", -apple-system, "Segoe UI", Roboto, sans-serif; /* как HOOKAH LOUNGE */
+  --num:"Montserrat", -apple-system, "Segoe UI", Roboto, sans-serif;  /* цены и цифры */
+  /* Движение: две кривые без отскоков. --ease — для мелких элементов, --ease-sheet — для шторок. */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-sheet:cubic-bezier(.32,.72,0,1);
+  --ease-io:cubic-bezier(.65,0,.35,1);
+  --t-fast:.3s;
+  --t:.5s;
+  --t-sheet:.6s;
+  /* Сетка: поля 16, 4 колонки, межколонник 12. Вертикальный ритм кратен 4. */
+  --pad:16px;
+  --gap:12px;
+  --col:calc((min(100vw, 480px) - 2 * var(--pad) - 3 * var(--gap)) / 4);
+  --r-lg:22px;  /* карточки */
+  --r-md:14px;  /* миниатюры */
+  color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--ink);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{background:var(--ink);color:var(--paper);font-family:var(--body);font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--paper);outline-offset:3px;border-radius:4px}
+
+.app{max-width:480px;margin:0 auto;min-height:100%;position:relative;
+  padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+@media (min-width:520px){
+  .app{border-left:1px solid var(--line);border-right:1px solid var(--line)}
+}
+
+/* ---------- Шапка ---------- */
+.hero{padding:calc(32px + env(safe-area-inset-top)) var(--pad) 32px;position:relative;overflow:hidden}
+.logo{margin:0 auto;width:calc(3 * var(--col) + 2 * var(--gap));max-width:260px;position:relative}
+.logo img{display:block;width:100%;height:auto;animation:logoIn 1.4s .1s var(--ease) both}
+@keyframes logoIn{from{opacity:0;transform:scale(.92);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
+.logo::before{content:"";position:absolute;inset:-12% -12% 18%;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(242,240,235,.10),transparent 70%);animation:glow 5s 1.4s ease-in-out infinite;pointer-events:none}
+@keyframes glow{0%,100%{opacity:.4;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
+
+.hero__meta{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);margin-top:24px}
+.pill{grid-column:span 2;display:flex;justify-content:center;align-items:center;gap:8px;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;white-space:nowrap;transition:background var(--t-fast) ease,color var(--t-fast) ease,transform var(--t-fast) var(--ease);text-decoration:none}
+.pill:active{transform:scale(.96);background:var(--paper);color:var(--ink)}
+.pill svg{width:15px;height:15px;stroke-width:1.4}
+
+/* ---------- Сетка категорий (как карточки-витрины) ---------- */
+.cats{padding:0 var(--pad) 48px}
+.cats__title{margin-top:0;color:var(--mute);
+  text-align:center;margin:0 0 16px;display:flex;align-items:center;gap:var(--gap)}
+.cats__title::before,.cats__title::after{content:"";flex:1;height:1px;background:var(--line)}
+.cats__grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:calc((2 * var(--col) + var(--gap)) * 1.25);gap:var(--gap)}
+.cat{grid-column:span 2;position:relative;border-radius:var(--r-lg);overflow:hidden;text-align:left;isolation:isolate;
+  background:radial-gradient(120% 80% at 50% 20%,#232325 0%,#141415 55%,#0d0d0e 100%);
+  border:1px solid rgba(242,240,235,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  animation:rise .8s var(--ease) backwards;transition:transform var(--t-fast) var(--ease),border-color .3s}
+.cat--tall{grid-row:span 2}
+.cat:active{border-color:rgba(242,240,235,.25)}
+/* чёрный фон фото растворяется в карточке */
+.cat__img{position:absolute;left:50%;top:8px;height:56%;width:auto;aspect-ratio:1/1;object-fit:cover;transform:translateX(-50%);
+  mix-blend-mode:lighten;transition:transform .7s var(--ease);z-index:-1}
+.cat--tall .cat__img{height:72%;width:auto;top:2%}
+
+.cat__count{position:absolute;top:12px;right:12px;min-width:24px;height:24px;padding:0 8px;border-radius:999px;
+  background:rgba(0,0,0,.55);border:1px solid rgba(242,240,235,.12);display:grid;place-items:center;color:var(--soft)}
+.cat__txt small{text-wrap:balance}
+.cat__txt{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:4px}
+.cat__txt b{text-wrap:balance}
+.cat__txt small{color:var(--mute)}
+.cat__txt em{font-style:normal;margin-top:4px}
+
+/* ---------- Разделы ---------- */
+.section{padding:0}
+.section__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--gap);margin-bottom:16px}
+.section__title{
+  position:relative;display:inline-block;text-wrap:balance}
+.section__count{color:var(--mute);font-variant-numeric:tabular-nums}
+.section__note{color:var(--mute);margin:-8px 0 16px;max-width:42ch}
+
+/* ---------- Позиции ---------- */
+.list{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:var(--col) 1fr auto;gap:var(--gap);align-items:center;padding:12px 0;width:100%;text-align:left;cursor:pointer;
+  border-top:1px solid var(--line);transition:transform var(--t-fast) var(--ease);animation:rise .8s var(--ease) backwards}
+.item:last-child{border-bottom:1px solid var(--line)}
+.item:active:not(:has(.ctl :active)){transform:scale(.985)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.thumb{width:var(--col);height:var(--col);aspect-ratio:1/1;border-radius:var(--r-md);overflow:hidden;position:relative;background:var(--raise)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--paper);
+  background:repeating-linear-gradient(135deg,var(--raise) 0 6px,#1b1b1a 6px 7px)}
+.item__desc{color:var(--mute);margin-top:4px}
+.item__price{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.item__price small{display:block;color:var(--mute);margin-top:2px}
+.item__price.ask{color:var(--mute)}
+.rub{margin-left:2px}
+
+/* карточка «Паровой коктейль» — главная позиция */
+.feature{border:1px solid var(--paper);border-radius:var(--r-lg);padding:var(--pad);min-height:calc(2 * var(--col) + var(--gap));position:relative;overflow:hidden;width:100%;text-align:left;
+  transition:transform var(--t-fast) var(--ease);animation:rise .8s var(--ease) backwards;display:block}
+.feature{cursor:pointer}
+.feature:active:not(:has(.ctl :active)){transform:scale(.98)}
+.feature__smoke{position:absolute;right:-30px;top:-40px;width:200px;height:200px;pointer-events:none;opacity:.55}
+.feature__smoke circle{fill:none;stroke:var(--paper);stroke-width:1}
+.feature__smoke g{transform-origin:100px 100px;animation:spin 18s linear infinite}
+.feature__smoke g:nth-child(2){animation-duration:26s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.feature__img{position:absolute;right:0;top:0;height:100%;width:auto;aspect-ratio:1/1;object-fit:cover;pointer-events:none;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 45%);mask-image:linear-gradient(90deg,transparent 0,#000 45%);
+  animation:smokein .9s .2s var(--ease) backwards}
+@keyframes smokein{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:none}}
+.feature__label,.feature__name,.feature__row{position:relative}
+.feature__label{color:var(--mute)}
+.feature__name{margin-top:8px;max-width:12ch}
+.feature__row{display:flex;flex-direction:column;align-items:flex-start;margin-top:24px;gap:4px;max-width:58%}
+.feature__time{color:var(--mute)}
+
+.tips{margin-top:var(--gap);animation:rise .8s var(--ease) backwards;border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--pad)}
+.tips__title{text-wrap:balance}
+.tips ol{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:16px}
+.tips li{display:grid;grid-template-columns:24px 1fr;gap:var(--gap);animation:rise .8s var(--ease) backwards}
+.tips li span{color:var(--mute);padding-top:2px;font-variant-numeric:tabular-nums}
+.tips li p{color:var(--soft)}
+
+/* ---------- Список (корзина) ---------- */
+.add{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);position:relative;display:grid;place-items:center;transition:background var(--t-fast) ease,color var(--t-fast) ease,border-color var(--t-fast) ease,transform var(--t-fast) var(--ease)}
+.add:empty::before,.add:empty::after{content:"";position:absolute;width:12px;height:1.5px;background:currentColor;left:50%;top:50%;transform:translate(-50%,-50%)}
+.add:empty::after{transform:translate(-50%,-50%) rotate(90deg)}
+.add:active{transform:scale(.92)}
+.add.in{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.item__right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.ctl{display:flex;justify-content:flex-end;min-height:36px}
+.ctl--feature{position:absolute;right:var(--pad);top:var(--pad);z-index:1}
+.ctl--feature .add{background:var(--ink)}
+.ctl--feature .step{background:var(--ink)}
+.step--row{border-color:var(--paper);animation:stepin .4s var(--ease)}
+.step--row b{min-width:20px}
+@keyframes stepin{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.step b.pop{display:inline-block}
+.pop{animation:popk .5s var(--ease-io)}
+@keyframes popk{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.cartbar.pop{animation:barpop .5s var(--ease-io)}
+@keyframes barpop{0%{transform:translate(-50%,0) scale(1)}40%{transform:translate(-50%,0) scale(1.02)}100%{transform:translate(-50%,0) scale(1)}}
+
+.cartbar{position:fixed;left:50%;bottom:calc(var(--pad) + env(safe-area-inset-bottom));z-index:30;
+  width:calc(min(100vw, 480px) - 2 * var(--pad));display:flex;justify-content:space-between;align-items:center;gap:12px;
+  height:52px;padding:0 var(--pad) 0 12px;border-radius:999px;background:var(--paper);color:var(--ink);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  /* спрятана: уезжает ниже экрана с учётом нижнего отступа iPhone и полностью скрыта */
+  transform:translate(-50%,calc(100% + 40px + env(safe-area-inset-bottom)));visibility:hidden;opacity:0;pointer-events:none;
+  transition:transform var(--t-sheet) var(--ease-sheet),opacity .4s ease,visibility 0s var(--t-sheet)}
+.cartbar.show{transform:translate(-50%,0);visibility:visible;opacity:1;pointer-events:auto;
+  transition:transform var(--t-sheet) var(--ease-sheet),opacity .3s ease,visibility 0s}
+.cartbar__l{display:flex;align-items:center;gap:12px}
+.cartbar__n{min-width:24px;height:24px;padding:0 8px;border-radius:999px;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.cartbar__s{font-variant-numeric:tabular-nums}
+body.has-cart .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;height:36px;flex:none}
+.step button{width:36px;height:34px;display:grid;place-items:center}
+.step button:active{transform:scale(.9)}
+.step b{min-width:16px;text-align:center;font-variant-numeric:tabular-nums}
+.sheet__opts div{align-items:center;gap:12px}
+.opt__l{display:flex;flex-direction:column;gap:2px}
+.opt__l em{font-style:normal}
+.opt-add{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:var(--paper);color:var(--ink);transition:transform var(--t-fast) var(--ease)}
+.opt-add:active{transform:scale(.94)}
+
+.crow{display:grid;grid-template-columns:1fr auto;grid-template-areas:"t p" "s p";gap:8px 12px;padding:16px 0;border-top:1px solid var(--line);align-items:center}
+.crow:last-child{border-bottom:1px solid var(--line)}
+.crow__t{grid-area:t;display:flex;flex-direction:column;gap:2px}
+.crow__t span{color:var(--mute)}
+.crow .step{grid-area:s;justify-self:start}
+.crow__p{grid-area:p;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.cart__empty{color:var(--mute);padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cart__total{display:flex;justify-content:space-between;align-items:baseline;margin-top:16px}
+.cart__total:empty{display:none}
+.cart__total span{color:var(--mute)}
+.cart__total b{font-variant-numeric:tabular-nums}
+.cart__note{color:var(--mute);margin-top:6px}
+.cart__note:empty{display:none}
+.cart__clear{margin-top:24px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--mute)}
+.cart__clear[data-armed="1"]{color:var(--paper);border-color:var(--paper)}
+
+/* ---------- Инфо ---------- */
+.hours{display:grid;grid-template-columns:1fr auto;border-top:1px solid var(--line)}
+.hours div{padding:12px 0;border-bottom:1px solid var(--line)}
+.hours div:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
+.hours .today{color:var(--paper)}
+.hours .dim{color:var(--mute)}
+.acc{border-top:1px solid var(--line)}
+.acc:last-child{border-bottom:1px solid var(--line)}
+.acc__btn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:16px 0;text-align:left}
+.acc__plus{width:24px;height:24px;position:relative;flex:none}
+.acc__plus::before,.acc__plus::after{content:"";position:absolute;left:4px;right:4px;top:11px;height:1.5px;background:var(--paper);transition:transform .45s var(--ease-io)}
+.acc__plus::after{transform:rotate(90deg)}
+.acc.open .acc__plus::after{transform:rotate(0)}
+.acc__body{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--t) var(--ease-io)}
+.acc.open .acc__body{grid-template-rows:1fr}
+.acc__inner{overflow:hidden;min-height:0;opacity:0;transform:translateY(-6px);
+  transition:opacity .25s ease,transform .45s var(--ease-io)}
+.acc.open .acc__inner{opacity:1;transform:none;transition:opacity .35s ease .08s,transform .45s var(--ease-io)}
+.acc__inner ul{list-style:none;padding:0 0 16px;display:flex;flex-direction:column;gap:8px}
+.acc__inner li{color:var(--soft);padding-left:16px;position:relative;max-width:60ch}
+.acc__inner li::before{content:"";position:absolute;left:0;top:9px;width:8px;height:1.5px;background:var(--mute)}
+
+.foot{padding:48px var(--pad) 0;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;
+  border-top:1px solid var(--line);margin:0 var(--pad);padding-left:0;padding-right:0}
+.foot__mark{display:block;width:calc(3 * var(--col) + 2 * var(--gap));max-width:260px;height:auto;margin-bottom:12px}
+.foot__phone{text-decoration:none}
+.foot__addr{color:var(--mute);max-width:32ch}
+.foot__addr:empty{display:none}
+/* правила: шторка фиксированной высоты, чтобы при раскрытии пунктов она не прыгала */
+.sheet--info.is-rules{height:88vh;height:88dvh}
+.sheet--info.is-rules .info__scroll{flex:1}
+.sheet .info__scroll{overflow-anchor:none}
+.info-part{display:none}
+.info-part.on{display:block}
+.foot__links{display:flex;gap:24px;margin-top:4px}
+
+/* ---------- Нижняя карточка ---------- */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity var(--t) ease;z-index:40}
+.sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:480px;transform:translate(-50%,105%);z-index:41;touch-action:pan-y;
+  background:var(--raise);border-radius:26px 26px 0 0;padding:8px var(--pad) calc(24px + env(safe-area-inset-bottom));
+  transition:transform var(--t-sheet) var(--ease-sheet);border-top:1px solid var(--line)}
+.sheet.open{transform:translate(-50%,0)}
+.sheet-bg.open{opacity:1;pointer-events:auto}
+.sheet__grab{width:40px;height:4px;border-radius:4px;background:#3a3a37;margin:0 auto 16px;box-shadow:0 0 0 12px transparent}
+.sheet__img{aspect-ratio:1/1;max-height:52vh;margin:0 auto;border-radius:var(--r-lg);overflow:hidden;position:relative;background:var(--ink)}
+.sheet__img img{width:100%;height:100%;object-fit:cover}
+.sheet__cat{color:var(--mute);margin-top:16px}
+.sheet__name{margin-top:6px}
+.sheet__desc{color:var(--soft);margin-top:8px}
+.sheet__opts{display:flex;flex-direction:column;margin-top:16px;border-top:1px solid var(--line)}
+.sheet__opts div{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
+.sheet__close{position:absolute;top:var(--pad);right:var(--pad);width:36px;height:36px;border-radius:50%;background:rgba(11,11,11,.7);display:grid;place-items:center;z-index:2}
+.sheet__close svg{width:14px;height:14px}
+
+/* ---------- приветствие при открытии ---------- */
+.welcome{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:var(--pad);
+  background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:wFade .5s ease both}
+.welcome[hidden]{display:none}
+/* пока висит приветствие, карточки и логотип ждут — их появление видно после закрытия */
+body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animation-play-state:paused}
+.welcome.out{animation:wFadeOut .4s ease both}
+.welcome__card{width:100%;max-width:calc(4 * var(--col) + 3 * var(--gap));background:var(--raise);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:32px var(--pad) var(--pad);text-align:center;animation:wIn .7s .05s var(--ease) both}
+.welcome.out .welcome__card{animation:wOut .4s var(--ease-io) both}
+.welcome__mark{display:block;width:calc(var(--col) + var(--gap));height:auto;margin:0 auto 24px;animation:logoIn 1.2s .15s var(--ease) both}
+.welcome__title{margin-top:8px}
+.welcome__text{margin:12px auto 0;max-width:34ch;color:var(--soft)}
+.welcome__hours{display:flex;flex-direction:column;align-items:center;gap:8px;margin:24px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.welcome__status{display:inline-flex;align-items:center;gap:8px}
+.welcome__status i{width:6px;height:6px;border-radius:50%;background:var(--mute)}
+.welcome__status.open i{background:var(--paper);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,240,235,.5)}70%{box-shadow:0 0 0 8px rgba(242,240,235,0)}100%{box-shadow:0 0 0 0 rgba(242,240,235,0)}}
+.welcome__btn{width:100%;height:44px;border-radius:999px;background:var(--paper);color:var(--ink);transition:transform var(--t-fast) var(--ease)}
+.welcome__btn:active{transform:scale(.97)}
+@keyframes wFade{from{opacity:0}to{opacity:1}}
+@keyframes wFadeOut{to{opacity:0}}
+@keyframes wIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes wOut{to{opacity:0;transform:translateY(8px) scale(.98)}}
+
+/* ---------- живые карточки ---------- */
+/* «Дополнительно»: геймпад с фишками медленно парит и чуть покачивается */
+.cat--float .cat__img{animation:hover 5.5s var(--ease-io) infinite;transform-origin:50% 60%}
+@keyframes hover{0%,100%{translate:0 0;rotate:0deg}50%{translate:0 -6px;rotate:-1.5deg}}
+body.locked .cat--float .cat__img,body.welcoming .cat--float .cat__img{animation-play-state:paused}
+.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;mix-blend-mode:screen}
+.cat__txt,.cat__count{z-index:1}
+.feature .fx{z-index:0}
+@media (prefers-reduced-motion:reduce){.fx{display:none}.cat{transform:none!important}}
+
+/* подсказка, что список листается: нижние пункты растворяются, стрелка — в самой прозрачной зоне */
+.sheet{--fade:44px;--hint:calc(24px + env(safe-area-inset-bottom) + 14px)}
+body.has-cart .sheet{--fade:84px;--hint:calc(var(--pad) + 52px + 16px + env(safe-area-inset-bottom))}
+.sheet .info__scroll{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - var(--fade) - 120px),rgba(0,0,0,.05) calc(100% - var(--fade)));
+  mask-image:linear-gradient(180deg,#000 calc(100% - var(--fade) - 120px),rgba(0,0,0,.05) calc(100% - var(--fade)))}
+.sheet:not(.more) .info__scroll{-webkit-mask-image:none;mask-image:none}
+/* при прокрутке верх списка растворяется под кнопкой закрытия */
+.sheet.scrolled .info__scroll{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 56px);mask-image:linear-gradient(180deg,transparent 0,#000 56px)}
+.sheet.scrolled.more .info__scroll{
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 56px,#000 calc(100% - var(--fade) - 120px),rgba(0,0,0,.05) calc(100% - var(--fade)));
+  mask-image:linear-gradient(180deg,transparent 0,#000 56px,#000 calc(100% - var(--fade) - 120px),rgba(0,0,0,.05) calc(100% - var(--fade)))}
+.scroll-hint{position:absolute;left:50%;bottom:var(--hint);transform:translate(-50%,6px);z-index:3;pointer-events:none;
+  color:var(--paper);opacity:0;transition:opacity var(--t) ease,transform var(--t) var(--ease);line-height:0}
+.scroll-hint svg{width:18px;height:18px;animation:nudge 2s var(--ease-io) infinite}
+@keyframes nudge{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+.sheet.more .scroll-hint{opacity:.9;transform:translate(-50%,0)}
+.sheet--info{padding-top:8px;max-height:88vh;display:flex;flex-direction:column}
+/* шторка категории: под ней — главная, над ней — карточка позиции, список и панель «Мой список» */
+.sheet--cat{padding-top:8px;height:90vh;height:90dvh;display:flex;flex-direction:column;z-index:41}
+.sheet--cat .info__scroll{flex:1;padding-bottom:24px}
+body.has-cart .sheet--cat .info__scroll{padding-bottom:96px}
+.sheet--cat .section{display:none;padding:0 0 8px}
+.sheet--cat .section.on{display:block}
+.sheet--cat .section__head{padding-right:52px;min-height:36px}
+.sheet--cat .section__count{display:none}
+.sheet-bg--cat{z-index:40}
+#sheetBg{z-index:48}
+#sheet,#info,#cart{z-index:49}
+.cartbar{z-index:45}
+body.locked{overflow:hidden}
+.info__scroll{overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.info__scroll .section__head{margin:6px 0 16px}
+.sheet__close--info{background:var(--ink);top:var(--pad)}
+.foot__link{text-decoration:underline;text-underline-offset:3px;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){
+  .cartbar{transition:none}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .logo::before{display:none}
+}
+
+/* =====================================================================
+   ТИПОГРАФИКА — 10 стилей. Все тексты страницы используют только их.
+   Антиква (как «ИНКОГНИТО» в логотипе): H1, H2.
+   Гротеск (как «HOOKAH LOUNGE»): Цена L, Заголовок, Цена, Текст, Кнопка, Подпись, Метка, Счётчик.
+   ===================================================================== */
+/* H1 — заголовки шторок и позиций */
+.section__title,.sheet__name,.feature__name,.welcome__title{
+  font-family:var(--display);font-weight:600;font-size:28px;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;
+  font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1}
+/* H2 — названия категорий, подзаголовки блоков (на узких экранах ужимается, чтобы влезло «Дополнительно») */
+.cat__txt b,.tips__title{
+  font-family:var(--display);font-weight:600;font-size:17px;line-height:1.15;letter-spacing:.03em;text-transform:uppercase;
+  font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1}
+/* в карточках — одинаковый для всех размер: самый крупный, при котором «Дополнительно» помещается в строку */
+.cat__txt b{font-size:min(20px, calc((2 * var(--col) + var(--gap) - 24px) / 9.4));letter-spacing:0;line-height:1.1}
+/* Цена L — главная цена и итог списка */
+.feature__price,.cart__total b{
+  font-family:var(--num);font-weight:600;font-size:32px;line-height:1.1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+/* Заголовок — названия позиций и пунктов */
+.item__name,.acc__btn,.crow__t b,.opt__l,.cartbar__l{
+  font-family:var(--body);font-weight:600;font-size:15px;line-height:1.35}
+/* Цена — все цены и количества */
+.item__price,.crow__p,.opt__l em,.cartbar__s,.cat__txt em,.step b,.foot__phone,.welcome__today{
+  font-family:var(--num);font-weight:500;font-size:15px;line-height:1.35;letter-spacing:0;font-variant-numeric:tabular-nums}
+/* Текст — описания и правила */
+.sheet__desc,.tips li p,.acc__inner li,.hours div,.cart__empty,.welcome__text{
+  font-family:var(--body);font-weight:400;font-size:14px;line-height:1.5}
+.hours div:nth-child(even){font-variant-numeric:tabular-nums}
+/* Кнопка */
+.pill,.opt-add,.cart__clear,.foot__link,.welcome__btn{
+  font-family:var(--body);font-weight:400;font-size:13px;line-height:1.2;letter-spacing:.02em}
+/* Подпись — вторичная информация, всегда приглушённая */
+.item__desc,.item__price small,.item__price.ask,.cat__txt small,.feature__time,.section__note,.foot__addr,.crow__t span,.cart__note,.cart__total span{
+  font-family:var(--body);font-weight:400;font-size:12px;line-height:1.4;letter-spacing:0;color:var(--mute)}
+/* Метка — надписи капсом над заголовками */
+.feature__label,.sheet__cat,.cats__title,.tips li span,.welcome__label,.welcome__status{
+  font-family:var(--body);font-weight:500;font-size:11px;line-height:1.3;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.tips li span{letter-spacing:.04em;font-variant-numeric:tabular-nums}  /* номера советов — метка без разрядки */
+/* Счётчик — цифры в кружках */
+.cat__count,.cartbar__n{
+  font-family:var(--num);font-weight:600;font-size:11px;line-height:1;font-variant-numeric:tabular-nums}
+/* знак рубля наследует стиль цены */
+.rub{font:inherit;margin-left:.15em}
+/* заглушки без фото */
+.ph{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:.04em}
+.sheet__img .ph{font-size:64px}
+.step button{font-size:16px;line-height:1}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <h1 class="logo"><img src="img/logo.png" alt="Инкогнито Hookah Lounge" width="656" height="720"></h1>
+        <div class="hero__meta">
+      <button class="pill" type="button" data-info="hours">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Часы работы
+      </button>
+      <button class="pill" type="button" data-info="rules">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg>
+        Правила
+      </button>
+    </div>
+  </header>
+
+  <section class="cats" id="cats" aria-label="Категории меню">
+    <h2 class="cats__title">Меню</h2>
+    <div class="cats__grid" id="catsGrid"></div>
+  </section>
+
+
+
+  <footer class="foot">
+    <img class="foot__mark" src="img/wordmark.png" alt="Инкогнито hookah lounge" width="640" height="97">
+    <a class="foot__phone" href="tel:+79328604860">+7 932 860-48-60</a>
+    <p class="foot__addr" id="footAddr"></p>
+    <span class="foot__links"><button type="button" data-info="hours" class="foot__link">Часы работы</button><button type="button" data-info="rules" class="foot__link">Правила</button></span>
+  </footer>
+</div>
+
+<div class="sheet-bg sheet-bg--cat" id="catBg"></div>
+<div class="sheet sheet--cat" id="catSheet" role="dialog" aria-modal="true" aria-label="Категория меню">
+  <div class="scroll-hint" aria-hidden="true"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l5 5 5-5"/></svg></div>
+  <div class="sheet__grab"></div>
+  <button class="sheet__close sheet__close--info" type="button" data-close-cat aria-label="Закрыть категорию">
+    <svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8"><path d="M1 1l12 12M13 1L1 13"/></svg>
+  </button>
+  <div class="info__scroll" id="catBody"><main id="menu"></main></div>
+</div>
+
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName">
+  <div class="sheet__grab"></div>
+  <div class="sheet__img" id="sheetImg">
+    <button class="sheet__close" id="sheetClose" type="button" aria-label="Закрыть">
+      <svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8"><path d="M1 1l12 12M13 1L1 13"/></svg>
+    </button>
+  </div>
+  <p class="sheet__cat" id="sheetCat"></p>
+  <h3 class="sheet__name" id="sheetName"></h3>
+  <p class="sheet__desc" id="sheetDesc"></p>
+  <div class="sheet__opts" id="sheetOpts"></div>
+</div>
+
+<button class="cartbar" id="cartBar" type="button" data-cart aria-label="Открыть мой список">
+  <span class="cartbar__l"><span class="cartbar__n" id="cartCount">0</span>Мой список</span>
+  <span class="cartbar__s" id="cartSum"></span>
+</button>
+
+<div class="sheet sheet--info" id="cart" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+  <div class="scroll-hint" aria-hidden="true"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l5 5 5-5"/></svg></div>
+  <div class="sheet__grab"></div>
+  <button class="sheet__close sheet__close--info" type="button" data-close aria-label="Закрыть">
+    <svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8"><path d="M1 1l12 12M13 1L1 13"/></svg>
+  </button>
+  <div class="info__scroll">
+    <h2 class="section__title" id="cartTitle" style="margin-top:6px">Мой список</h2>
+    <p class="section__note" style="margin:10px 0 18px">Это памятка, а не онлайн-заказ. Покажите список кальянщику или администратору.</p>
+    <div id="cartList"></div>
+    <div class="cart__total" id="cartTotal"></div>
+    <p class="cart__note" id="cartNote"></p>
+    <button class="cart__clear" id="cartClear" type="button">Очистить список</button>
+  </div>
+</div>
+
+<div class="sheet sheet--info" id="info" role="dialog" aria-modal="true" aria-label="Информация">
+  <div class="scroll-hint" aria-hidden="true"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l5 5 5-5"/></svg></div>
+  <div class="sheet__grab"></div>
+  <button class="sheet__close sheet__close--info" type="button" data-close aria-label="Закрыть">
+    <svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8"><path d="M1 1l12 12M13 1L1 13"/></svg>
+  </button>
+  <div class="info__scroll">
+    <div class="info-part" data-part="hours">
+      <div class="section__head"><h2 class="section__title">Часы работы</h2></div>
+      <div class="hours" id="hours"></div>
+    </div>
+    <div class="info-part" data-part="rules">
+      <div class="section__head"><h2 class="section__title">Правила</h2></div>
+      <p class="section__note">Посещая кальянную, вы принимаете правила заведения.</p>
+      <div id="rules"></div>
+    </div>
+  </div>
+</div>
+
+<div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-labelledby="wTitle" hidden>
+  <div class="welcome__card">
+    <img class="welcome__mark" src="img/emblem.png" alt="" width="240" height="240">
+    <p class="welcome__label">Добро пожаловать</p>
+    <h2 class="welcome__title" id="wTitle">Рады видеть вас</h2>
+    <p class="welcome__text">Устраивайтесь поудобнее. Здесь всё меню: отмечайте, что хотите заказать, и покажите список кальянщику. Оставайтесь инкогнито.</p>
+    <div class="welcome__hours">
+      <span class="welcome__status" id="wStatus"><i></i><span id="wStatusText"></span></span>
+      <b class="welcome__today" id="wToday"></b>
+    </div>
+    <button class="welcome__btn" type="button" data-welcome-close>Смотреть меню</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   НАСТРОЙКИ
+   Меню берётся из Google Таблицы (вкладки «Меню» и «Разделы»).
+   Таблица должна быть открыта по ссылке для просмотра («Все, у кого есть ссылка»).
+   Если таблица недоступна, показывается последнее загруженное меню, а если его нет — встроенное (MENU ниже).
+   SHEET_GIDS — номера вкладок: число после «gid=» в адресе, когда вкладка открыта.
+   ===================================================================== */
+const SHEET_ID = "1Y99Y7D2Tst7Nj585W9rrruAH_Qe4LT-6AcQhtS6UFiU";
+const SHEET_GIDS = { menu: 0, sections: 160657347 };
+const sheetURL = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+
+/* Адрес для подвала. Пусто — строка не показывается. */
+const ADDRESS = "г. Бузулук, ул. Ново-Чапаевская, 11В";
+
+/* Фото категорий (временные, сгенерированы в Figma AI). Используются, пока у позиции нет своего фото в поле img. */
+const CAT_IMG = {
+  "Кальян":"img/categories/hookah.jpg",
+  "Горячие напитки":"img/categories/hot.jpg",
+  "Холодные напитки":"img/categories/cold.jpg",
+  "Пиво":"img/categories/beer.jpg",
+  "Снеки":"img/categories/snacks.jpg",
+  "Дополнительно":"img/categories/extra.jpg",
+  "Постоянным гостям":"img/categories/regulars.jpg"
+};
+
+/* Фото конкретных позиций */
+const IMG_CORONA = "img/items/corona.jpg";
+
+/* Фото: путь к файлу рядом с сайтом, например "img/mohito.jpg". Пока пусто — показывается заглушка. */
+const MENU = [
+  { id:"hookah", title:"Кальян", tipsTitle:"Как курить, чтобы кальян не горчил", tips:[
+    "Вдыхайте дым и сразу выдыхайте, не задерживая. Кальян курится «не в затяг»: так лучше раскрывается вкус и не кружится голова.",
+    "Каждые 1–2 затяжки делайте паузу и продувайте кальян: выдохните воздух в шланг, не вдыхая дым. Это сбивает лишний жар.",
+    "Тяните медленно и плавно, не раскуривайте слишком интенсивно.",
+    "Почувствовали горечь или жжение — сразу скажите кальянщику."
+  ], items:[
+    { name:"Паровой коктейль", price:"1100", img:"", feature:true,
+      about:"Кальян с миксом вкусов на ваш выбор, кальянщик поможет подобрать. Готовится 15–20 минут. Если кальян горчит, плохо тянется или забит неправильно, скажите в течение 10 минут после подачи, и мы заменим его на аналогичный." },
+  ]},
+  { id:"hot", title:"Горячие напитки", items:[
+    { name:"Чай", desc:"Вкусы — уточняйте у персонала", vol:"1 л|2 л", price:"250|400", img:"",
+      about:"Чай в чайнике на 1 или 2 литра, на всю компанию. Вкусы уточняйте у персонала." },
+    { name:"Американо", price:"170", img:"", about:"Эспрессо с горячей водой. Классический чёрный кофе." },
+    { name:"Капучино", price:"210", img:"", about:"Эспрессо с молоком и плотной молочной пеной." },
+    { name:"Латте", price:"210", img:"", about:"Эспрессо с большим количеством молока и лёгкой пенкой. Самый мягкий кофе в меню." },
+  ]},
+  { id:"cold", title:"Холодные напитки", items:[
+    { name:"Лимонад яблоко-киви", desc:"Авторский", vol:"1 л", price:"650", img:"", about:"Авторский лимонад с яблоком и киви: свежий, кисло-сладкий. Литр на компанию." },
+    { name:"Лимонад манго-маракуйя", desc:"Авторский", vol:"1 л", price:"650", img:"", about:"Авторский тропический лимонад с манго и маракуйей. Литр на компанию." },
+    { name:"Лимонад барбарис-клубника", desc:"Авторский", vol:"1 л", price:"650", img:"", about:"Авторский ягодный лимонад со вкусом барбариса и клубники. Литр на компанию." },
+    { name:"Мохито", desc:"Авторский лимонад", vol:"1 л", price:"650", img:"", about:"Безалкогольный мохито с лаймом и мятой. Литр на компанию." },
+    { name:"Морс клюквенный", vol:"1 л", price:"300", img:"", about:"Кисло-сладкий ягодный морс из клюквы." },
+    { name:"Морс брусничный", vol:"1 л", price:"300", img:"", about:"Ягодный морс из брусники с лёгкой терпкостью." },
+    { name:"Сок яблочный", vol:"1,3 л", price:"250", img:"", about:"Яблочный сок, 1,3 литра на компанию." },
+    { name:"Сок цитрусовый", vol:"1,3 л", price:"250", img:"", about:"Цитрусовый сок, 1,3 литра на компанию." },
+    { name:"Сок мультифрукт", vol:"1,3 л", price:"250", img:"", about:"Мультифруктовый сок, 1,3 литра на компанию." },
+    { name:"Кола", vol:"0,33 л", price:"150", img:"", about:"Классическая кола." },
+    { name:"Спрайт", vol:"0,33 л", price:"150", img:"", about:"Газированный напиток со вкусом лимона и лайма." },
+    { name:"Фанта", vol:"0,33 л", price:"150", img:"", about:"Апельсиновая газировка." },
+    { name:"Adrenaline Rush", vol:"0,5 л", price:"250", img:"", about:"Энергетический напиток." },
+    { name:"Вода без газа", vol:"0,5 л", price:"100", img:"", about:"Питьевая вода без газа." },
+    { name:"Вода с газом", vol:"0,5 л", price:"100", img:"", about:"Газированная питьевая вода." },
+  ]},
+  { id:"beer", title:"Пиво", note:"Только для гостей старше 18 лет.", items:[
+    { name:"Bud", vol:"0,5 л", price:"200", img:"", about:"Светлый лагер: лёгкий и освежающий." },
+    { name:"Hoegaarden", price:"200", img:"", about:"Бельгийское пшеничное нефильтрованное пиво с нотами кориандра и апельсиновой цедры." },
+    { name:"Козел светлый", price:"200", img:"", about:"Чешский светлый лагер с мягкой хмелевой горчинкой." },
+    { name:"Козел тёмный", price:"200", img:"", about:"Тёмный лагер с карамельными и солодовыми нотами." },
+    { name:"Амстердам", price:"200", img:"", about:"Пиво Amsterdam. Сорт уточняйте у персонала." },
+    { name:"Corona Extra", desc:"Импортное", vol:"0,33 л", price:"250", img:IMG_CORONA, about:"Мексиканский светлый лагер, лёгкий и освежающий." },
+    { name:"Guinness", desc:"Импортное, азотированное", price:"400", img:"", about:"Ирландский тёмный стаут. Азот даёт плотную кремовую пену и бархатный вкус." },
+  ]},
+  { id:"snacks", title:"Снеки", items:[
+    { name:"Пивная тарелка", desc:"Чипсы картофельные, сыр-косичка, жареный арахис, вяленые колбаски, крендели", price:"", img:"",
+      about:"Тарелка закусок к пиву на компанию: картофельные чипсы, сыр-косичка, жареный арахис, вяленые колбаски и крендели." },
+    { name:"Чипсы", vol:"70 г", price:"170", img:"", about:"Картофельные чипсы, 70 г." },
+    { name:"Фисташки", price:"", img:"", about:"Фисташки к пиву." },
+    { name:"Кальмары сушёные", price:"", img:"", about:"Сушёные кальмары, классическая закуска к пиву." },
+    { name:"Сыр-косичка", price:"", img:"", about:"Солёный сыр-косичка к пиву." },
+    { name:"Вяленые колбаски", price:"", img:"", about:"Вяленые мясные колбаски к пиву." },
+  ]},
+  { id:"extra", title:"Дополнительно", items:[
+    { name:"Продление работы на 1 час", price:"3000", img:"", about:"Заведение работает для вас на час дольше обычного времени закрытия." },
+    { name:"PlayStation", vol:"1 час", price:"150", img:"", about:"Игровая приставка. Цена за 1 час." },
+    { name:"Настольные игры", price:"0", img:"", about:"Попросите любую игру у администратора, это бесплатно." },
+  ]},
+  { id:"regulars", title:"Постоянным гостям", note:"Специальные цены для постоянных гостей.", items:[
+    { name:"Паровой коктейль", price:"1000", img:"", about:"Кальян по специальной цене для постоянных гостей." },
+    { name:"Перезабивка парового коктейля", price:"600", img:"", about:"Новая забивка для уже поданного кальяна по цене для постоянных гостей." },
+    { name:"Чай", vol:"1 л|2 л", price:"150|300", img:"", about:"Чай в чайнике по цене для постоянных гостей. Вкусы уточняйте у персонала." },
+  ]},
+];
+
+/* Часы: 0 — воскресенье. Закрытие после полуночи. */
+const HOURS = { 0:[20,1], 1:[20,1], 2:[20,1], 3:[20,1], 4:[20,1], 5:[20,2], 6:[20,2] };
+
+const RULES = [
+  { t:"Бронирование и посадка", li:[
+    "Бронь столов — по телефону +7 932 860-48-60 или через администратора.",
+    "При опоздании более чем на 15 минут бронь может быть аннулирована."]},
+  { t:"Заказ кальяна", li:[
+    "Занимая стол, гости заказывают кальян. Без заказа кальяна стол занимать нельзя.",
+    "Кальян готовится в среднем 15–20 минут, при высокой загрузке дольше.",
+    "Замена возможна только при производственном браке (горчит, не тянется, забит неправильно) и только в течение 10 минут после подачи. Кальян заменяется на аналогичный."]},
+  { t:"Правила курения", li:[
+    "Нельзя самостоятельно разжигать угли, переставлять кальян на другие столы без разрешения персонала и передавать его гостям за соседние столы.",
+    "Сигареты курить запрещено."]},
+  { t:"Возраст 18+", li:[
+    "Продажа и предоставление кальяна лицам младше 18 лет запрещены. При сомнениях администратор вправе попросить документ, удостоверяющий личность."]},
+  { t:"Поведение и комфорт", li:[
+    "Просим не мешать другим гостям громкими разговорами, криками и нецензурной бранью."]},
+  { t:"Порча имущества", li:[
+    "Гости несут материальную ответственность за порчу мебели, кальянов, посуды и декора. Стоимость ущерба определяет администрация."]},
+];
+
+/* ===================================================================== */
+const $ = s => document.querySelector(s);
+const cartEl = document.getElementById("cart");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const split = s => String(s ?? "").split("|").map(x => x.trim());
+const initials = n => n.replace(/[^A-Za-zА-Яа-яЁё ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+
+function priceHTML(p){
+  if (p === "" || p == null) return null;
+  if (String(p) === "0") return "бесплатно";
+  const s = String(p).trim();
+  const n = /^\d+$/.test(s) ? Number(s).toLocaleString("ru-RU").replace(/\s/g, "\u00A0") : esc(s);
+  return `${n}<span class="rub">₽</span>`;
+}
+function thumbHTML(it){
+  return it.img
+    ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'${initials(it.name)}'}))">`
+    : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`;
+}
+
+let flat = [];
+function render(menu){
+  flat = [];
+  const main = $("#menu"), nav = $("#nav");
+  main.innerHTML = "";
+  nav?.querySelectorAll(".chip:not(.chip--home)").forEach(c => c.remove());
+  menu.forEach((sec, si) => {
+    const s = document.createElement("section");
+    s.className = "section"; s.id = sec.id; s.dataset.title = sec.title;
+    let html = `<div class="section__head"><h2 class="section__title">${esc(sec.title)}</h2>
+      <span class="section__count">${String(sec.items.length).padStart(2,"0")}</span></div>`;
+    if (sec.note) html += `<p class="section__note">${esc(sec.note)}</p>`;
+    html += `<div class="list">`;
+    sec.items.forEach((it, ii) => {
+      const idx = flat.push({ ...it, img: it.img || sec.img || CAT_IMG[sec.title] || "", cat: sec.title }) - 1;
+      const itx = flat[idx];
+      const vols = split(it.vol), prices = split(it.price);
+      const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
+      if (it.feature) {
+        html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
+          ${itx.img ? `<img class="feature__img" src="${itx.img}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+            <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
+            <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
+          <p class="feature__label">Фирменная позиция</p>
+          <p class="feature__name">${esc(it.name)}</p>
+          <div class="feature__row"><span class="feature__price">${priceHTML(prices[0])}</span>
+          <span class="feature__time">Готовится 15–20 минут</span></div>
+          <span class="ctl ctl--feature" data-ctl="${idx}"></span></div>`;
+        return;
+      }
+      let priceCell;
+      const p0 = priceHTML(prices[0]);
+      if (!p0) priceCell = `<span class="item__price ask">уточняйте</span>`;
+      else if (prices.length > 1) priceCell = `<span class="item__price">${prices.map(priceHTML).join(" / ")}<small>${vols.join(" / ")}</small></span>`;
+      else priceCell = `<span class="item__price">${p0}${it.vol ? `<small>${esc(it.vol)}</small>` : ""}</span>`;
+      html += `<div class="item" role="button" tabindex="0" data-i="${idx}" ${delay}>
+        <span class="thumb">${thumbHTML(itx)}</span>
+        <span><span class="item__name">${esc(it.name)}</span>${it.desc ? `<span class="item__desc" style="display:block">${esc(it.desc)}</span>` : ""}</span>
+        <span class="item__right">${priceCell}<span class="ctl" data-ctl="${idx}"></span></span></div>`;
+    });
+    html += `</div>`;
+    if (sec.tips?.length) html += `<div class="tips" style="animation-delay:${120 + Math.min(sec.items.length,8)*50 + 120}ms"><p class="tips__title">${esc(sec.tipsTitle || "Советы")}</p><ol>${
+      sec.tips.map((t, i) => `<li style="animation-delay:${120 + Math.min(sec.items.length,8)*50 + 200 + i*70}ms"><span>${String(i+1).padStart(2,"0")}</span><p>${esc(t)}</p></li>`).join("")}</ol></div>`;
+    s.innerHTML = html;
+    main.appendChild(s);
+  });
+  renderCats(menu);
+  if (typeof initFX === "function") requestAnimationFrame(initFX);
+  paintBadges();
+}
+const CAT_DESC = {
+  "Кальян":"Паровой коктейль на ваш вкус",
+  "Горячие напитки":"Чай в чайниках и кофе",
+  "Холодные напитки":"Лимонады, морсы, соки",
+  "Пиво":"Светлое, тёмное, импортное",
+  "Снеки":"Закуски к пиву",
+  "Дополнительно":"PlayStation, игры, продление",
+  "Постоянным гостям":"Специальные цены",
+};
+function minPrice(sec){
+  const ns = sec.items.flatMap(it => split(it.price)).map(p => parseFloat(p)).filter(n => !isNaN(n) && n > 0);
+  return ns.length ? Math.min(...ns) : null;
+}
+function renderCats(menu){
+  $("#catsGrid").innerHTML = menu.map((s, i) => {
+    const img = s.img || CAT_IMG[s.title];
+    const mp = minPrice(s);
+    return `<button class="cat${i === 0 ? " cat--tall" : ""}" type="button" data-cat="${s.id}" style="animation-delay:${250 + i*70}ms">
+      <span class="cat__count">${s.items.length}</span>
+      ${img ? `<img class="cat__img" src="${img}" alt="" loading="${i < 3 ? "eager" : "lazy"}">` : ""}
+      <canvas class="fx" aria-hidden="true"></canvas>
+      <span class="cat__txt"><b>${esc(s.title)}</b>${(s.desc || CAT_DESC[s.title]) ? `<small>${esc(s.desc || CAT_DESC[s.title])}</small>` : ""}
+      ${mp ? `<em>от ${fmt(mp)} ₽</em>` : ""}</span>
+    </button>`;
+  }).join("");
+}
+
+/* --- переход по чипам и кнопкам --- */
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-cat]");
+  if (c) { openCat(c.dataset.cat); return; }
+  if (e.target.closest("[data-close-cat]")) { uiClose(); return; }
+  const inf = e.target.closest("[data-info]");
+  if (inf) { openInfo(inf.dataset.info || "hours"); return; }
+  if (e.target.closest("[data-close]")) { uiClose(); return; }
+  const add = e.target.closest("[data-add]");
+  if (add) {
+    const it = flat[+add.dataset.add];
+    if (split(it.price).length > 1) openSheet(it);      /* несколько объёмов — выбрать в карточке */
+    else { cartChange(it, 0, +1); const c = document.querySelector(`[data-ctl="${add.dataset.add}"] b`); if (c) pop(c); }
+    return;
+  }
+  const dec = e.target.closest("[data-dec]");
+  if (dec) { decItem(flat[+dec.dataset.dec]); return; }
+  const st = e.target.closest("[data-step]");
+  if (st) { const [k, d] = st.dataset.step.split("~"); cartStep(k, +d); return; }
+  if (e.target.closest("[data-cart]")) { openCart(); return; }
+  if (e.target.closest("#cartClear")) { clearCart(e.target.closest("#cartClear")); return; }
+  const it = e.target.closest("[data-i]");
+  if (it) openSheet(flat[+it.dataset.i]);
+});
+
+/* --- шторка категории --- */
+const catSheet = $("#catSheet"), catBg = $("#catBg");
+/* слои: пока открыта любая шторка, главная не прокручивается; системная «Назад» закрывает верхнюю шторку */
+let layers = 0;
+function pushLayer(){ layers++; try { history.pushState({ incognito: layers }, ""); } catch (e) {} }
+function syncLock(){ document.body.classList.toggle("locked", [catSheet, sheet, info, cartEl].some(n => n.classList.contains("open")) || !$("#welcome").hidden); }
+function anyTopOpen(){ return [sheet, info, cartEl].some(n => n.classList.contains("open")); }
+/* закрытие из интерфейса: через историю, чтобы «Назад» и крестик вели себя одинаково */
+function uiClose(){
+  if (layers > 0) { try { history.back(); return; } catch (e) {} }
+  closeTop();
+}
+window.addEventListener("popstate", () => { if (layers > 0) { layers--; closeTop(); } });
+function openCat(id){
+  pushLayer();
+  document.querySelectorAll("#menu .section").forEach(s => s.classList.toggle("on", s.id === id));
+  $("#catBody").scrollTop = 0;
+  catSheet.classList.add("open"); catBg.classList.add("open");
+  requestAnimationFrame(() => hintCat());
+  syncLock();
+  catSheet.querySelector("[data-close-cat]").focus({ preventScroll: true });
+}
+function closeCat(){
+  closeAll();
+  catSheet.classList.remove("open"); catBg.classList.remove("open");
+  syncLock();
+}
+/* закрывает верхнюю шторку: сначала карточку/список/правила, потом категорию */
+function closeTop(){
+  if ([sheet, info, cartEl].some(n => n.classList.contains("open"))) closeAll();
+  else if (catSheet.classList.contains("open")) closeCat();
+}
+catBg.addEventListener("click", uiClose);
+
+/* --- карточка позиции --- */
+const sheet = $("#sheet"), sheetBg = $("#sheetBg");
+function openSheet(it){
+  const img = $("#sheetImg");
+  img.querySelectorAll("img,.ph").forEach(n => n.remove());
+  img.insertAdjacentHTML("beforeend", it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}">` : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`);
+  $("#sheetCat").textContent = it.cat;
+  $("#sheetName").textContent = it.name;
+  $("#sheetDesc").textContent = it.about || it.desc || "";
+  const vols = split(it.vol), prices = split(it.price);
+  sheetItem = it;
+  paintSheetOpts();
+  if (!anyTopOpen()) pushLayer();
+  closeAll(true);
+  sheet.classList.add("open"); sheetBg.classList.add("open"); syncLock();
+  $("#sheetClose").focus({ preventScroll: true });
+}
+const info = $("#info");
+function openInfo(part){
+  info.querySelectorAll(".info-part").forEach(n => n.classList.toggle("on", n.dataset.part === part));
+  info.setAttribute("aria-label", part === "rules" ? "Правила" : "Часы работы");
+  info.classList.toggle("is-rules", part === "rules");
+  info.querySelectorAll(".acc.open").forEach(a => { a.classList.remove("open"); a.querySelector(".acc__btn").setAttribute("aria-expanded", "false"); });
+  if (!anyTopOpen()) pushLayer();
+  closeAll(true);
+  info.classList.add("open"); sheetBg.classList.add("open"); syncLock();
+  info.querySelector(".info__scroll").scrollTop = 0;
+  info.querySelector("[data-close]").focus({ preventScroll: true });
+  requestAnimationFrame(() => hintInfo());
+}
+function closeAll(keepBg){ [sheet, info, cartEl].forEach(n => n.classList.remove("open")); if (!keepBg) sheetBg.classList.remove("open"); syncLock(); }
+sheetBg.addEventListener("click", uiClose);
+$("#sheetClose").addEventListener("click", uiClose);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && (catSheet.classList.contains("open") || anyTopOpen())) uiClose();
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches?.("[data-i]")) { e.preventDefault(); openSheet(flat[+e.target.dataset.i]); }
+});
+/* шторку можно стянуть пальцем вниз: она едет за пальцем, отпустил ниже порога — закрылась, иначе вернулась */
+[sheet, info, cartEl, catSheet].forEach(el => {
+  const sc = el.querySelector(".info__scroll");
+  const bg = el === catSheet ? catBg : sheetBg;
+  let y0 = null, x0 = 0, t0 = 0, dy = 0, drag = false;
+  el.addEventListener("touchstart", e => {
+    if (!el.classList.contains("open")) return;
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; t0 = performance.now(); dy = 0; drag = false;
+  }, { passive: true });
+  el.addEventListener("touchmove", e => {
+    if (y0 === null) return;
+    const d = e.touches[0].clientY - y0, dx = Math.abs(e.touches[0].clientX - x0);
+    if (!drag) {
+      const onGrab = e.target.closest(".sheet__grab, .section__head, .sheet__close");
+      if (d > 6 && d > dx && (onGrab || !sc || sc.scrollTop <= 0)) { drag = true; el.style.transition = "none"; bg.style.transition = "none"; }
+      else if (Math.abs(d) > 6) { y0 = null; return; }
+    }
+    if (drag) {
+      e.preventDefault();
+      dy = Math.max(0, d);
+      el.style.transform = `translate(-50%, ${dy}px)`;
+      bg.style.opacity = String(Math.max(0, 1 - dy / (el.offsetHeight * .9)));
+    }
+  }, { passive: false });
+  const end = () => {
+    if (drag) {
+      const v = dy / Math.max(1, performance.now() - t0);
+      const close = dy > el.offsetHeight * .22 || v > .6;
+      /* доезжает от того места, где отпустили палец: вниз за экран или обратно наверх */
+      el.style.transition = "transform .45s cubic-bezier(.32,.72,0,1)"; bg.style.transition = "opacity .45s ease";
+      void el.offsetWidth;
+      el.style.transform = close ? "translate(-50%, 105%)" : "";
+      bg.style.opacity = close ? "0" : "";
+      const tidy = () => { el.style.transition = ""; el.style.transform = ""; bg.style.transition = ""; bg.style.opacity = ""; };
+      if (close) { uiClose(); setTimeout(tidy, 480); } else setTimeout(tidy, 470);
+    }
+    y0 = null; drag = false; dy = 0;
+  };
+  el.addEventListener("touchend", end);
+  el.addEventListener("touchcancel", end);
+});
+
+/* --- часы и статус --- */
+function renderHours(){
+  const names = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+  const now = new Date(), d = now.getDay(), h = now.getHours() + now.getMinutes()/60;
+  const pad = n => String(n).padStart(2,"0") + ":00";
+  $("#hours").innerHTML = [1,2,3,4,5,6,0].map(i => {
+    const cls = i === d ? "today" : "dim";
+    return `<div class="${cls}">${names[i]}${i === d ? " · сегодня" : ""}</div><div class="${cls}">${pad(HOURS[i][0])}–${pad(HOURS[i][1])}</div>`;
+  }).join("");
+  const prev = (d + 6) % 7;
+  const openToday = h >= HOURS[d][0];
+  const openFromYesterday = h < HOURS[prev][1];
+  const open = openToday || openFromYesterday;
+  const until = openFromYesterday ? HOURS[prev][1] : HOURS[d][1];
+  /* для приветствия: смена, которая идёт сейчас (после полуночи — вчерашняя), иначе сегодняшняя */
+  const sess = openFromYesterday ? HOURS[prev] : HOURS[d];
+  $("#wToday").textContent = `Сегодня ${pad(sess[0])}–${pad(sess[1])}`;
+  $("#wStatus").classList.toggle("open", open);
+  $("#wStatusText").textContent = open ? `Сейчас открыто до ${pad(until)}` : `Откроемся в ${pad(HOURS[d][0])}`;
+}
+
+function renderRules(){
+  $("#rules").innerHTML = RULES.map((r, i) => `<div class="acc">
+    <button class="acc__btn" type="button" aria-expanded="false" id="acc${i}">${esc(r.t)}<span class="acc__plus" aria-hidden="true"></span></button>
+    <div class="acc__body"><div class="acc__inner"><ul>${r.li.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div></div></div>`).join("");
+  $("#rules").addEventListener("click", e => {
+    const b = e.target.closest(".acc__btn"); if (!b) return;
+    const a = b.parentElement, o = a.classList.toggle("open");
+    b.setAttribute("aria-expanded", o);
+    if (o) setTimeout(() => {
+      const sc = info.querySelector(".info__scroll"), r = a.getBoundingClientRect(), v = sc.getBoundingClientRect();
+      const over = r.bottom - (v.bottom - 72);
+      if (over > 0) sc.scrollBy({ top: Math.min(over, r.top - v.top - 16), behavior: "smooth" });
+    }, 460);
+  });
+}
+
+/* --- загрузка из Google Таблицы --- */
+function parseCSV(text){
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"' && text[i+1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i+1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+    else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+/* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка или имя файла в папке img/items */
+function photoURL(v){
+  v = String(v || "").trim(); if (!v) return "";
+  const d = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/) || v.match(/^([\w-]{25,})$/);
+  if (d) return `https://drive.google.com/thumbnail?id=${d[1]}&sz=w1000`;
+  if (/^(https?:|data:)/.test(v)) return v;
+  return "img/items/" + v.replace(/^\/+/, "");
+}
+/* CSV → массив объектов по названиям колонок (порядок колонок в таблице не важен) */
+function table(text){
+  const rows = parseCSV(text).filter(r => r.some(c => c.trim()));
+  if (!rows.length) return [];
+  const head = rows[0].map(c => c.trim().toLowerCase().replace(/ё/g, "е"));
+  return rows.slice(1).map(r => Object.fromEntries(head.map((k, i) => [k, (r[i] || "").trim()])));
+}
+const pick = (o, ...keys) => { for (const k of keys) if (o[k]) return o[k]; return ""; };
+function buildMenu(menuRows, secRows){
+  const secInfo = new Map(), order = [];
+  secRows.forEach(s => {
+    const t = pick(s, "раздел"); if (!t) return;
+    order.push(t);
+    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото")), note: pick(s, "пометка") });
+  });
+  const map = new Map();
+  menuRows.forEach(r => {
+    const cat = pick(r, "раздел"), name = pick(r, "название");
+    if (!cat || !name || /^нет$/i.test(pick(r, "показывать"))) return;
+    if (!map.has(cat)) map.set(cat, []);
+    map.get(cat).push({ name, desc: pick(r, "кратко", "описание"), about: pick(r, "подробно"),
+      vol: pick(r, "объем"), price: pick(r, "цена").replace(/\s/g, "").replace(/₽|руб\.?/gi, ""), img: photoURL(pick(r, "фото")) });
+  });
+  const titles = [...order.filter(t => map.has(t)), ...[...map.keys()].filter(t => !order.includes(t))];
+  return titles.map((t, i) => {
+    const old = MENU.find(s => s.title === t) || {}, info = secInfo.get(t) || {};
+    const items = map.get(t);
+    if (i === 0 && /кальян/i.test(t) && items[0]) items[0].feature = true;
+    return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
+      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "" };
+  });
+}
+const MENU_CACHE = "incognito-menu-cache-v1";
+async function loadSheet(){
+  if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
+  try {
+    const get = gid => fetch(sheetURL(gid), { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.text(); });
+    const [m, s] = await Promise.all([get(SHEET_GIDS.menu), SHEET_GIDS.sections != null ? get(SHEET_GIDS.sections).catch(() => "") : ""]);
+    const menu = buildMenu(table(m), s ? table(s) : []);
+    if (!menu.length) return;
+    const json = JSON.stringify(menu);
+    let cached = null; try { cached = localStorage.getItem(MENU_CACHE); } catch (e) {}
+    try { localStorage.setItem(MENU_CACHE, json); } catch (e) {}
+    if (json !== cached) render(menu);
+  } catch (e) { /* таблица недоступна — остаётся то, что уже показано */ }
+}
+function cachedMenu(){
+  try { const c = JSON.parse(localStorage.getItem(MENU_CACHE)); if (Array.isArray(c) && c.length) return c; } catch (e) {}
+  return null;
+}
+
+/* =====================================================================
+   МОЙ СПИСОК — гость отмечает, что хочет заказать, и показывает персоналу.
+   Хранится только в браузере гостя. Онлайн-заказа нет.
+   ===================================================================== */
+const CART_KEY = "incognito-list-v1";
+let cart = [];
+let sheetItem = null;
+try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { cart = []; }
+const save = () => { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {} };
+const keyOf = (it, oi) => it.cat + "::" + it.name + "::" + oi;
+const fmt = n => n.toLocaleString("ru-RU").replace(/\s/g, "\u00A0");  /* 1 100 — тысячи через неразрывный пробел */
+
+function cartChange(it, oi, d){
+  const k = keyOf(it, oi);
+  let row = cart.find(r => r.k === k);
+  if (!row && d > 0) {
+    const vols = split(it.vol), prices = split(it.price);
+    row = { k, name: it.name, cat: it.cat, vol: vols[oi] || "", price: prices[oi] ?? "", q: 0 };
+    cart.push(row);
+  }
+  if (!row) return;
+  row.q += d;
+  if (row.q <= 0) cart = cart.filter(r => r !== row);
+  save(); paintAll();
+}
+function cartStep(k, d){
+  const row = cart.find(r => r.k === k); if (!row) return;
+  row.q += d;
+  if (row.q <= 0) cart = cart.filter(r => r !== row);
+  save(); paintAll();
+}
+function qtyOfItem(it){ return cart.filter(r => r.k.startsWith(it.cat + "::" + it.name + "::")).reduce((s, r) => s + r.q, 0); }
+function totals(){
+  let count = 0, sum = 0, unknown = false;
+  cart.forEach(r => { count += r.q; const n = parseFloat(String(r.price).replace(/\s/g, "")); if (isNaN(n)) unknown = true; else sum += n * r.q; });
+  return { count, sum, unknown };
+}
+function pop(el){ el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); el.addEventListener("animationend", () => el.classList.remove("pop"), { once: true }); }
+
+function paintBadges(){
+  document.querySelectorAll("[data-ctl]").forEach(c => {
+    const i = +c.dataset.ctl, it = flat[i], q = qtyOfItem(it);
+    const name = esc(it.name);
+    const html = q > 0
+      ? `<span class="step step--row"><button type="button" data-dec="${i}" aria-label="Убрать одну: ${name}">−</button><b>${q}</b><button type="button" data-add="${i}" aria-label="Добавить ещё: ${name}">+</button></span>`
+      : `<button class="add" type="button" data-add="${i}" aria-label="Добавить в список: ${name}"></button>`;
+    const had = Number(c.dataset.state || 0);
+    if (q > 0 && had > 0) { const b = c.querySelector(".step b"); if (b && b.textContent !== String(q)) b.textContent = q; }
+    else if (had !== q || !c.firstChild) c.innerHTML = html;
+    c.dataset.state = q;
+  });
+}
+/* «−» в меню: убирает одну штуку; у позиций с несколькими объёмами — последний добавленный */
+function decItem(it){
+  const rows = cart.filter(r => r.k.startsWith(it.cat + "::" + it.name + "::"));
+  if (rows.length) cartStep(rows[rows.length - 1].k, -1);
+}
+function stepper(k, q){
+  return `<span class="step"><button type="button" data-step="${esc(k)}~-1" aria-label="Убрать одну">−</button><b>${q}</b><button type="button" data-step="${esc(k)}~1" aria-label="Добавить ещё">+</button></span>`;
+}
+function paintSheetOpts(){
+  if (!sheetItem) return;
+  const it = sheetItem, vols = split(it.vol), prices = split(it.price);
+  $("#sheetOpts").innerHTML = prices.map((p, i) => {
+    const k = keyOf(it, i), row = cart.find(r => r.k === k);
+    const ctrl = row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">В список</button>`;
+    return `<div><span class="opt__l">${esc(vols[i] || "Цена")}<em>${priceHTML(p) || "уточняйте у персонала"}</em></span>${ctrl}</div>`;
+  }).join("");
+}
+$("#sheetOpts").addEventListener("click", e => {
+  const b = e.target.closest("[data-optadd]"); if (!b || !sheetItem) return;
+  cartChange(sheetItem, +b.dataset.optadd, +1);
+});
+function paintBar(){
+  const { count, sum, unknown } = totals();
+  const bar = $("#cartBar");
+  const was = bar.classList.contains("show"), prev = Number(bar.dataset.count || 0);
+  bar.dataset.count = count;
+  bar.classList.toggle("show", count > 0);
+  document.body.classList.toggle("has-cart", count > 0);
+  $("#cartCount").textContent = count;
+  $("#cartSum").textContent = sum ? fmt(sum) + " ₽" + (unknown ? "+" : "") : (unknown ? "цена уточняется" : "");
+  if (was && count > prev) pop(bar);
+}
+function paintCart(){
+  const list = $("#cartList"), { count, sum, unknown } = totals();
+  if (!cart.length) {
+    list.innerHTML = `<p class="cart__empty">Список пуст. Нажмите «+» у позиции в меню, чтобы добавить её сюда.</p>`;
+  } else {
+    list.innerHTML = cart.map(r => {
+      const n = parseFloat(r.price);
+      const line = isNaN(n) ? "уточняйте" : (n === 0 ? "бесплатно" : fmt(n * r.q) + " ₽");
+      return `<div class="crow"><div class="crow__t"><b>${esc(r.name)}</b><span>${esc([r.vol, r.cat].filter(Boolean).join(" · "))}</span></div>
+        ${stepper(r.k, r.q)}<span class="crow__p">${line}</span></div>`;
+    }).join("");
+  }
+  $("#cartTotal").innerHTML = count ? `<span>Итого · ${count} шт.</span><b>${fmt(sum)} ₽</b>` : "";
+  $("#cartNote").textContent = unknown ? "Цена некоторых позиций уточняется — в итог они не вошли." : "";
+  $("#cartClear").hidden = !cart.length;
+}
+function paintAll(){ paintBadges(); paintSheetOpts(); paintBar(); if (cartEl.classList.contains("open")) paintCart(); }
+function openCart(){
+  if (!anyTopOpen()) pushLayer();
+  closeAll(true);
+  const b = $("#cartClear"); b.dataset.armed = ""; b.textContent = "Очистить список";
+  paintCart();
+  cartEl.classList.add("open"); sheetBg.classList.add("open"); syncLock();
+  cartEl.querySelector("[data-close]").focus({ preventScroll: true });
+}
+function clearCart(b){
+  if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Нажмите ещё раз, чтобы очистить"; return; }
+  cart = []; save(); paintAll(); paintCart();
+  b.dataset.armed = ""; b.textContent = "Очистить список";
+}
+
+/* --- типографика: без висячих предлогов и союзов, число не отрывается от единицы --- */
+const SHORT = "а|в|во|и|к|ко|о|об|с|со|у|на|не|ни|но|по|за|до|из|от|для|без|при|под|над|про|что|как|или|же";
+const RE_SHORT = new RegExp(`(^|[\\s(«„"—–-])(${SHORT})\\s+`, "gi");
+const RE_UNIT = /(\d)\s+(л|г|мл|кг|мин|минут|час|часа|часов|₽|руб|шт)(?=[\s.,)]|$)/g;
+const RE_DASH = /\s+([—–])\s/g;
+function typo(s){
+  return s.replace(RE_SHORT, (m, a, w) => a + w + " ").replace(RE_SHORT, (m, a, w) => a + w + " ")
+          .replace(RE_UNIT, "$1 $2").replace(RE_DASH, " $1 ");
+}
+function typoTree(root){
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n =>
+    n.parentElement && !n.parentElement.closest("script,style") && /\s/.test(n.nodeValue) ? 1 : 2 });
+  const ns = []; while (w.nextNode()) ns.push(w.currentNode);
+  ns.forEach(n => { const v = typo(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
+  if (n.nodeType === 1) typoTree(n); else if (n.nodeType === 3 && n.parentElement) typoTree(n.parentElement);
+}))).observe(document.body, { childList: true, subtree: true });
+
+/* =====================================================================
+   ЖИВЫЕ КАРТОЧКИ: дым, пар, пузырьки, свечение + наклон за пальцем.
+   Точки привязаны к фото (доли ширины/высоты кадра).
+   ===================================================================== */
+const FX = {
+  "Горячие напитки":   [{ t:"steam",  x:.68, y:.50, rate:.6, size:.7 }, { t:"steam", x:.62, y:.38, rate:.25, size:.5 }],
+  "Холодные напитки":  [{ t:"bubbles", x0:.38, x1:.60, y0:.86, y1:.34, rate:.7 }],
+  "Пиво":              [{ t:"bubbles", x0:.24, x1:.42, y0:.80, y1:.32, rate:.45 }, { t:"bubbles", x0:.58, x1:.76, y0:.80, y1:.32, rate:.35, dark:true }],
+  "Дополнительно":     [{ t:"float" }],
+  "Постоянным гостям": [{ t:"glow", x:.40, y:.24, r:.16 }, { t:"smoke", x:.40, y:.18, rate:.5, size:.6 }],
+};
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fxList = [];
+function attachFX(host, img, spec){
+  const cv = host.querySelector(".fx"); if (!cv || !img || reduceMotion) return;
+  const ctx = cv.getContext("2d");
+  const st = { host, img, cv, ctx, spec, parts: [], acc: spec.map(() => 0), visible: false, t0: performance.now() };
+  fxList.push(st);
+  io.observe(host);
+}
+const io = new IntersectionObserver(es => es.forEach(e => {
+  const st = fxList.find(s => s.host === e.target); if (st) st.visible = e.isIntersecting;
+}), { threshold: 0 });
+
+function frame(now){
+  for (const st of fxList) {
+    if (!st.visible || !st.host.offsetParent) continue;
+    const inSheet = st.host.closest(".sheet");
+    if (!inSheet && document.body.classList.contains("locked")) continue;   /* под шторкой — пауза */
+    const { cv, ctx, host, img } = st;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const W = host.clientWidth, H = host.clientHeight;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const hr = host.getBoundingClientRect(), ir = img.getBoundingClientRect();
+    const ix = ir.left - hr.left, iy = ir.top - hr.top, iw = ir.width, ih = ir.height;
+    const dt = Math.min(50, now - (st.last || now)) / 1000; st.last = now;
+    st.spec.forEach((s, k) => {
+      if (s.t === "glow") {
+        const a = .18 + .12 * Math.sin(now / 520) + .06 * Math.sin(now / 173);
+        const g = ctx.createRadialGradient(ix + s.x * iw, iy + s.y * ih, 0, ix + s.x * iw, iy + s.y * ih, s.r * iw);
+        g.addColorStop(0, `rgba(255,120,60,${a})`); g.addColorStop(1, "rgba(255,80,30,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        return;
+      }
+      st.acc[k] += s.rate * 10 * dt;
+      while (st.acc[k] >= 1) {
+        st.acc[k] -= 1;
+        if (s.t === "bubbles") st.parts.push({ k, t:"b", x: s.x0 + Math.random() * (s.x1 - s.x0), y: s.y0, v: .08 + Math.random() * .08,
+          r: .4 + Math.random() * .7, ph: Math.random() * 6, life: 0, ymin: s.y1, dark: s.dark });
+        else st.parts.push({ k, t:"s", x: s.x + (Math.random() - .5) * .03, y: s.y, vx: (Math.random() - .5) * .03,
+          vy: -(s.t === "steam" ? .09 : .13) * (.75 + Math.random() * .5), r: (s.t === "steam" ? .025 : .035) * s.size, grow: (s.t === "steam" ? .06 : .10) * s.size,
+          life: 0, max: (s.t === "steam" ? 1.8 : 2.6) * (.8 + Math.random() * .4), ph: Math.random() * 6, a: s.t === "steam" ? .045 : .06 });
+      }
+    });
+    st.parts = st.parts.filter(p => {
+      p.life += dt;
+      if (p.t === "b") {
+        p.y -= p.v * dt; const x = ix + (p.x + Math.sin(p.ph + p.life * 3) * .004) * iw, y = iy + p.y * ih;
+        const fade = Math.min(1, (p.y - p.ymin) / .08, p.life / .5);
+        ctx.beginPath(); ctx.arc(x, y, p.r, 0, 6.283);
+        ctx.fillStyle = `rgba(255,${p.dark ? 225 : 245},${p.dark ? 185 : 215},${.32 * fade})`; ctx.fill();
+        return p.y > p.ymin;
+      }
+      const k = p.life / p.max; if (k >= 1) return false;
+      p.x += (p.vx + Math.sin(p.ph + p.life * 1.9) * .025) * dt; p.y += p.vy * dt; p.r += p.grow * dt;
+      const x = ix + p.x * iw, y = iy + p.y * ih, r = p.r * iw;
+      const a = p.a * Math.sin(Math.PI * Math.min(1, k * 1.15)) ;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(228,228,222,${a})`); g.addColorStop(.6, `rgba(228,228,222,${a * .45})`); g.addColorStop(1, "rgba(228,228,222,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+      return true;
+    });
+  }
+  requestAnimationFrame(frame);
+}
+if (!reduceMotion) requestAnimationFrame(frame);
+
+function initFX(){
+  fxList.length = 0; io.disconnect();
+  if (reduceMotion) return;
+  document.querySelectorAll("#catsGrid .cat").forEach(card => {
+    const title = card.querySelector(".cat__txt b")?.textContent.replace(/ /g, " ");
+    if (FX[title]?.some(s => s.t === "float")) card.classList.add("cat--float");
+    if (FX[title]?.some(s => s.t !== "float")) attachFX(card, card.querySelector(".cat__img"), FX[title].filter(s => s.t !== "float"));
+  });
+}
+
+function watchScroll(sheetEl){
+  const sc = sheetEl.querySelector(".info__scroll");
+  const upd = () => {
+    sheetEl.classList.toggle("more", sc.scrollHeight - sc.clientHeight - sc.scrollTop > 24);
+    sheetEl.classList.toggle("scrolled", sc.scrollTop > 8);
+  };
+  sc.addEventListener("scroll", upd, { passive: true });
+  new ResizeObserver(upd).observe(sc);
+  sheetEl.addEventListener("transitionend", upd);
+  return upd;
+}
+const hintCat = watchScroll(catSheet), hintInfo = watchScroll(info), hintCart = watchScroll(cartEl);
+
+/* --- приветствие: один раз за посещение (пока открыта вкладка) --- */
+const welcome = $("#welcome");
+function closeWelcome(){
+  if (welcome.hidden || welcome.classList.contains("out")) return;
+  welcome.classList.add("out");
+  document.body.classList.remove("welcoming");
+  try { sessionStorage.setItem("incognito-welcome", "1"); } catch (e) {}
+  setTimeout(() => { welcome.hidden = true; welcome.classList.remove("out"); syncLock(); }, 400);
+}
+welcome.addEventListener("click", e => { if (e.target === welcome || e.target.closest("[data-welcome-close]")) closeWelcome(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeWelcome(); });
+function maybeWelcome(){
+  let seen = false; try { seen = sessionStorage.getItem("incognito-welcome") === "1"; } catch (e) {}
+  if (seen) return;
+  welcome.hidden = false; document.body.classList.add("welcoming"); syncLock();
+}
+
+render(cachedMenu() || MENU);
+paintBar();
+renderHours();
+renderRules();
+maybeWelcome();
+if (ADDRESS) $("#footAddr").textContent = ADDRESS;
+typoTree(document.body);
+loadSheet();
+setInterval(renderHours, 60000);
+</script>
+</body>
+</html>
