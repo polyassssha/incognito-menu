@@ -908,13 +908,15 @@ function parseCSV(text){
   if (cell || row.length) { row.push(cell); rows.push(row); }
   return rows;
 }
-/* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка или имя файла в папке img/items */
-function photoURL(v){
+/* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка, путь (img/…) или имя файла.
+   Имя файла: позиции — в папке img/items, разделы — в img/categories */
+function photoURL(v, dir = "img/items/"){
   v = String(v || "").trim(); if (!v) return "";
   const d = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/) || v.match(/^([\w-]{25,})$/);
   if (d) return `https://drive.google.com/thumbnail?id=${d[1]}&sz=w1000`;
   if (/^(https?:|data:)/.test(v)) return v;
-  return "img/items/" + v.replace(/^\/+/, "");
+  v = v.replace(/^\/+/, "");
+  return v.includes("/") ? v : dir + v;
 }
 /* CSV → массив объектов по названиям колонок (порядок колонок в таблице не важен) */
 function table(text){
@@ -929,7 +931,7 @@ function buildMenu(menuRows, secRows){
   secRows.forEach(s => {
     const t = pick(s, "раздел"); if (!t) return;
     order.push(t);
-    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото")), note: pick(s, "пометка") });
+    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), note: pick(s, "пометка") });
   });
   const map = new Map();
   menuRows.forEach(r => {
