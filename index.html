@@ -81,11 +81,15 @@ a{color:inherit}
 .cat__img,.cat .fx,.cat:has(.cat__img)::after,.feature__img,.feature:has(.feature__img)::after{border-radius:calc(var(--r-lg) - 1px)}
 
 .cat:active{border-color:rgba(242,240,235,.25)}
-/* фото заполняет карточку до краёв; снизу затемнение, чтобы читался текст */
-.cat__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;
+/* фото стоит сверху во всю ширину в своих пропорциях (обычная карточка — квадрат, высокая — 1:2),
+   а нижняя часть карточки — сплошной чёрный под текст; затемнение доходит до 100% выше текста */
+.cat:has(.cat__img){background:#000}
+.cat__img{position:absolute;left:0;top:0;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;
   transition:transform .7s var(--ease);z-index:-1}
+.cat--tall .cat__img{aspect-ratio:1/2}
 .cat:has(.cat__img)::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:linear-gradient(0deg,rgba(0,0,0,.92) 0,rgba(0,0,0,.78) 30%,rgba(0,0,0,.35) 52%,rgba(0,0,0,0) 72%)}
+  background:linear-gradient(0deg,#000 0,#000 34%,rgba(0,0,0,.7) 46%,rgba(0,0,0,0) 64%)}
+.cat--tall:has(.cat__img)::after{background:linear-gradient(0deg,#000 0,#000 18%,rgba(0,0,0,.7) 24%,rgba(0,0,0,0) 34%)}
 .cat:has(.cat__img) .cat__txt{text-shadow:0 1px 12px rgba(0,0,0,.6)}
 
 .cat__count{position:absolute;top:12px;right:12px;min-width:24px;height:24px;padding:0 8px;border-radius:999px;
@@ -297,6 +301,8 @@ body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animat
 .cat--wide{grid-column:span 4}
 .cat--wide .cat__ph{left:auto;right:0;width:50%;height:100%;top:0}
 .cat--wide .cat__txt{right:50%}
+.cat--wide .cat__img{left:auto;right:0;width:auto;height:100%}
+.cat--wide:has(.cat__img)::after{background:linear-gradient(90deg,#000 0,#000 44%,rgba(0,0,0,.6) 52%,rgba(0,0,0,0) 66%)}
 .cat--wide .cat__count{left:12px;right:auto}
 
 /* ---------- живые карточки ---------- */
@@ -666,7 +672,7 @@ function render(menu){
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
       if (it.feature) {
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${itx.img ? `<img class="feature__img" src="${itx.img}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+          ${(sec.banner || itx.img) ? `<img class="feature__img" src="${esc(sec.banner || itx.img)}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
             <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
             <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
           <p class="feature__label">Фирменная позиция</p>
@@ -951,7 +957,7 @@ function buildMenu(menuRows, secRows){
   secRows.forEach(s => {
     const t = pick(s, "раздел"); if (!t) return;
     order.push(t);
-    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), note: pick(s, "пометка") });
+    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banner: photoURL(pick(s, "баннер"), "img/banners/"), note: pick(s, "пометка") });
   });
   const map = new Map();
   menuRows.forEach(r => {
@@ -978,7 +984,7 @@ function buildMenu(menuRows, secRows){
     const items = map.get(t);
     if (i === 0 && /кальян/i.test(t) && items[0]) items[0].feature = true;
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
-      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "" };
+      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "", banner: info.banner || "" };
   });
 }
 const MENU_CACHE = "incognito-menu-cache-v1";
