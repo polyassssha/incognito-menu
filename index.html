@@ -76,6 +76,10 @@ a{color:inherit}
   border:1px solid rgba(242,240,235,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
   animation:rise .8s var(--ease) backwards;transition:transform var(--t-fast) var(--ease),border-color .3s}
 .cat--tall{grid-row:span 2}
+/* Safari на iPhone не обрезает анимированное содержимое по border-radius — режем явно */
+.cat,.feature{clip-path:inset(0 round var(--r-lg));-webkit-mask-image:-webkit-radial-gradient(white,black)}
+.cat__img,.cat .fx,.cat:has(.cat__img)::after,.feature__img,.feature:has(.feature__img)::after{border-radius:calc(var(--r-lg) - 1px)}
+
 .cat:active{border-color:rgba(242,240,235,.25)}
 /* фото заполняет карточку до краёв; снизу затемнение, чтобы читался текст */
 .cat__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;
