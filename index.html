@@ -214,6 +214,52 @@ body.has-cart .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .cart__clear{margin-top:24px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--mute)}
 .cart__clear[data-armed="1"]{color:var(--paper);border-color:var(--paper)}
 
+/* --- заказ в Telegram и вызов официанта (включается, когда задан ORDER_URL) --- */
+.order{flex:none;display:grid;gap:12px;padding-top:12px;margin-bottom:-8px}
+.order[hidden],.order-done[hidden],.callbtn[hidden]{display:none}
+.order__table{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0 0;border-top:1px solid var(--line)}
+.order__table span{color:var(--mute)}
+.order__tbtn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px}
+.order__tbtn em{font-style:normal;color:var(--mute)}
+.order__send{width:100%;height:52px;border-radius:999px;background:var(--paper);color:var(--ink);transition:transform var(--t-fast) var(--ease),opacity .3s ease}
+.order__send:active{transform:scale(.97)}
+.order__send:disabled{opacity:.55}
+.order__err{color:var(--paper);text-align:center}
+.order__err:empty{display:none}
+.order-done{display:grid;justify-items:center;text-align:center;gap:12px;padding:32px 0 8px;animation:rise .6s var(--ease) backwards}
+.order-done__mark{width:64px;height:64px;border-radius:50%;border:1px solid var(--paper);display:grid;place-items:center;margin-bottom:8px}
+.order-done__mark svg{width:28px;height:28px}
+.order-done .section__note{max-width:30ch;margin:0}
+.order-done .order__send{margin-top:16px}
+
+.callbtn{position:fixed;z-index:45;left:calc(50% - min(100vw, 480px) / 2 + var(--pad));bottom:calc(var(--pad) + env(safe-area-inset-bottom));
+  height:52px;display:flex;align-items:center;gap:10px;padding:0 20px 0 15px;border-radius:999px;
+  background:rgba(18,18,19,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);color:var(--paper);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);transition:padding var(--t) var(--ease),background .3s ease,color .3s ease,transform var(--t-fast) var(--ease);
+  animation:rise .8s .6s var(--ease) backwards}
+.callbtn:active{transform:scale(.95)}
+.callbtn svg{width:20px;height:20px;flex:none}
+.callbtn__t{white-space:nowrap;overflow:hidden;max-width:220px;transition:max-width var(--t) var(--ease),opacity .25s ease}
+body.has-cart .callbtn{padding:0 15px}
+body.has-cart .callbtn__t{max-width:0;opacity:0}
+.callbtn[data-armed="1"]{background:var(--paper);color:var(--ink)}
+.callbtn.is-sent{color:var(--mute)}
+body.ordering.has-cart .cartbar{left:calc(50% + 30px);width:calc(min(100vw, 480px) - 2 * var(--pad) - 60px)}
+body.ordering .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+
+.toast{position:fixed;z-index:47;left:50%;bottom:calc(var(--pad) + 64px + env(safe-area-inset-bottom));transform:translate(-50%,8px);
+  max-width:calc(min(100vw, 480px) - 2 * var(--pad));padding:12px 18px;border-radius:16px;background:var(--paper);color:var(--ink);text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s ease,transform .4s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast{width:max-content}
+#cart:has(.order:not([hidden])) .scroll-hint{bottom:calc(var(--hint) + 120px)}
+
+.tablebox__input{width:100%;height:56px;margin-top:20px;border:1px solid var(--line);border-radius:16px;background:transparent;color:var(--paper);
+  text-align:center;font:inherit;font-size:24px;font-variant-numeric:lining-nums tabular-nums;-moz-appearance:textfield}
+.tablebox__input::-webkit-outer-spin-button,.tablebox__input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tablebox__input:focus{outline:none;border-color:var(--paper)}
+.tablebox__cancel{margin-top:8px;height:44px;color:var(--mute);width:100%}
+
 /* ---------- Инфо ---------- */
 .hours{display:grid;grid-template-columns:1fr auto;border-top:1px solid var(--line)}
 .hours div{padding:12px 0;border-bottom:1px solid var(--line)}
@@ -462,8 +508,14 @@ body.locked{overflow:hidden}
   <div class="sheet__opts" id="sheetOpts"></div>
 </div>
 
+<button class="callbtn" id="callBtn" type="button" hidden aria-label="Позвать официанта">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path d="M12 5V3.5"/></svg>
+  <span class="callbtn__t">Позвать официанта</span>
+</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <button class="cartbar" id="cartBar" type="button" data-cart aria-label="Открыть мой список">
-  <span class="cartbar__l"><span class="cartbar__n" id="cartCount">0</span>Мой список</span>
+  <span class="cartbar__l"><span class="cartbar__n" id="cartCount">0</span><span id="cartBarLabel">Мой список</span></span>
   <span class="cartbar__s" id="cartSum"></span>
 </button>
 
@@ -475,11 +527,25 @@ body.locked{overflow:hidden}
   </button>
   <div class="info__scroll">
     <h2 class="section__title" id="cartTitle" style="margin-top:6px">Мой список</h2>
-    <p class="section__note" style="margin:10px 0 18px">Это памятка, а не онлайн-заказ. Покажите список кальянщику или администратору.</p>
-    <div id="cartList"></div>
-    <div class="cart__total" id="cartTotal"></div>
-    <p class="cart__note" id="cartNote"></p>
-    <button class="cart__clear" id="cartClear" type="button">Очистить список</button>
+    <div id="cartMain">
+      <p class="section__note" id="cartIntro" style="margin:10px 0 18px">Это памятка, а не онлайн-заказ. Покажите список кальянщику или администратору.</p>
+      <div id="cartList"></div>
+      <div class="cart__total" id="cartTotal"></div>
+      <p class="cart__note" id="cartNote"></p>
+      <button class="cart__clear" id="cartClear" type="button">Очистить список</button>
+    </div>
+    <div class="order-done" id="orderDone" hidden>
+      <span class="order-done__mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      <h3 class="section__title">Заказ отправлен</h3>
+      <p class="section__note" id="orderDoneText"></p>
+      <button class="order__send" type="button" data-close>Вернуться в меню</button>
+    </div>
+  </div>
+  <!-- кнопка заказа всегда видна внизу, список прокручивается над ней -->
+  <div class="order" id="order" hidden>
+    <div class="order__table"><span>Ваш стол</span><button class="order__tbtn" id="orderTable" type="button"></button></div>
+    <button class="order__send" id="orderSend" type="button">Отправить заказ</button>
+    <p class="order__err" id="orderErr" role="status"></p>
   </div>
 </div>
 
@@ -502,12 +568,23 @@ body.locked{overflow:hidden}
   </div>
 </div>
 
+<div class="welcome" id="tableBox" role="dialog" aria-modal="true" aria-labelledby="tbTitle" hidden>
+  <form class="welcome__card" id="tableForm" novalidate>
+    <p class="welcome__label">Номер стола</p>
+    <h2 class="welcome__title" id="tbTitle">За каким вы столом?</h2>
+    <p class="welcome__text">Номер указан на табличке с QR-кодом.</p>
+    <input class="tablebox__input" id="tableInput" type="number" inputmode="numeric" min="1" max="99" aria-label="Номер стола" autocomplete="off">
+    <button class="welcome__btn" type="submit">Готово</button>
+    <button class="tablebox__cancel" type="button" id="tableCancel">Отмена</button>
+  </form>
+</div>
+
 <div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-labelledby="wTitle" hidden>
   <div class="welcome__card">
     <img class="welcome__mark" src="img/emblem.png" alt="" width="240" height="240">
     <p class="welcome__label">Добро пожаловать</p>
     <h2 class="welcome__title" id="wTitle">Рады видеть вас</h2>
-    <p class="welcome__text">Устраивайтесь поудобнее. Здесь всё меню: отмечайте, что хотите заказать, и покажите список кальянщику. Оставайтесь инкогнито.</p>
+    <p class="welcome__text" id="wText">Устраивайтесь поудобнее. Здесь всё меню: отмечайте, что хотите заказать, и покажите список кальянщику. Оставайтесь инкогнито.</p>
     <div class="welcome__hours">
       <span class="welcome__status" id="wStatus"><i></i><span id="wStatusText"></span></span>
       <b class="welcome__today" id="wToday"></b>
@@ -530,6 +607,9 @@ const sheetURL = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/expo
 
 /* Адрес для подвала. Пусто — строка не показывается. */
 const ADDRESS = "г. Бузулук, ул. Ново-Чапаевская, 11В";
+/* адрес скрипта Google, который пересылает заказы в Telegram. Пусто — заказ и вызов официанта выключены, список работает как памятка */
+const ORDER_URL = "https://script.google.com/macros/s/AKfycbzvhy1uNBUQPtJq5VSH4ggMZEZIqS3W5B1D1AiKKdsZR6DGfy7ALiALCiSX0oDBX5pc/exec";
+const ORDERING = !!ORDER_URL;
 
 /* Фото категорий (временные, сгенерированы в Figma AI). Используются, пока у позиции нет своего фото в поле img. */
 const CAT_IMG = {
@@ -648,7 +728,7 @@ function priceHTML(p){
 }
 function thumbHTML(it){
   return it.img
-    ? `<img src="${esc(it.img)}" alt="" loading="lazy" data-ph="${esc(initials(it.name))}">`
+    ? `<img src="${esc(it.img)}" alt="" loading="lazy" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">`
     : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`;
 }
 
@@ -666,13 +746,13 @@ function render(menu){
     if (sec.note) html += `<p class="section__note">${esc(sec.note)}</p>`;
     html += `<div class="list">`;
     sec.items.forEach((it, ii) => {
-      const idx = flat.push({ ...it, img: it.img || sec.img || CAT_IMG[sec.title] || "", cat: sec.title }) - 1;
+      const idx = flat.push({ ...it, img: it.img || sec.img || CAT_IMG[sec.title] || "", fb: CAT_IMG[sec.title] || "", cat: sec.title }) - 1;
       const itx = flat[idx];
       const vols = split(it.vol), prices = split(it.price);
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
       if (it.feature) {
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${(sec.banner || itx.img) ? `<img class="feature__img" src="${esc(sec.banner || itx.img)}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+          ${(sec.banner || itx.img) ? `<img class="feature__img" src="${esc(sec.banner || itx.img)}" data-fb="${esc(itx.fb)}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
             <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
             <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
           <p class="feature__label">Фирменная позиция</p>
@@ -725,7 +805,7 @@ function renderCats(menu){
     const letter = esc((s.title.trim()[0] || "").toUpperCase());
     return `<button class="cat${cls}" type="button" data-cat="${s.id}" style="animation-delay:${250 + i*70}ms">
       <span class="cat__count">${s.items.length}</span>
-      ${img ? `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}">` : `<span class="cat__ph" aria-hidden="true">${letter}</span>`}
+      ${img ? `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}" data-fb="${esc(CAT_IMG[s.title] || "")}">` : `<span class="cat__ph" aria-hidden="true">${letter}</span>`}
       <canvas class="fx" aria-hidden="true"></canvas>
       <span class="cat__txt"><b>${esc(s.title)}</b>${(s.desc || CAT_DESC[s.title]) ? `<small>${esc(s.desc || CAT_DESC[s.title])}</small>` : ""}
       ${mp ? `<em>от ${fmt(mp)} ₽</em>` : ""}</span>
@@ -763,7 +843,7 @@ const catSheet = $("#catSheet"), catBg = $("#catBg");
 /* слои: пока открыта любая шторка, главная не прокручивается; системная «Назад» закрывает верхнюю шторку */
 let layers = 0;
 function pushLayer(){ layers++; try { history.pushState({ incognito: layers }, ""); } catch (e) {} }
-function syncLock(){ document.body.classList.toggle("locked", [catSheet, sheet, info, cartEl].some(n => n.classList.contains("open")) || !$("#welcome").hidden); }
+function syncLock(){ document.body.classList.toggle("locked", [catSheet, sheet, info, cartEl].some(n => n.classList.contains("open")) || !$("#welcome").hidden || !$("#tableBox").hidden); }
 function anyTopOpen(){ return [sheet, info, cartEl].some(n => n.classList.contains("open")); }
 /* закрытие из интерфейса: через историю, чтобы «Назад» и крестик вели себя одинаково */
 function uiClose(){
@@ -797,7 +877,7 @@ const sheet = $("#sheet"), sheetBg = $("#sheetBg");
 function openSheet(it){
   const img = $("#sheetImg");
   img.querySelectorAll("img,.ph").forEach(n => n.remove());
-  img.insertAdjacentHTML("beforeend", it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}" data-ph="${esc(initials(it.name))}">` : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`);
+  img.insertAdjacentHTML("beforeend", it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">` : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`);
   $("#sheetCat").textContent = it.cat;
   $("#sheetName").textContent = it.name;
   $("#sheetDesc").textContent = it.about || it.desc || "";
@@ -1105,16 +1185,111 @@ function paintCart(){
   $("#cartTotal").innerHTML = count ? `<span>Итого · ${count} шт.</span><b>${fmt(sum)} ₽</b>` : "";
   $("#cartNote").textContent = unknown ? "Цена некоторых позиций уточняется — в итог они не вошли." : "";
   $("#cartClear").hidden = !cart.length;
+  paintOrder();
 }
 function paintAll(){ paintBadges(); paintSheetOpts(); paintBar(); if (cartEl.classList.contains("open")) paintCart(); }
 function openCart(){
   if (!anyTopOpen()) pushLayer();
   closeAll(true);
   const b = $("#cartClear"); b.dataset.armed = ""; b.textContent = "Очистить список";
+  $("#cartMain").hidden = false; $("#orderDone").hidden = true; $("#orderErr").textContent = "";
   paintCart();
   cartEl.classList.add("open"); sheetBg.classList.add("open"); syncLock();
   cartEl.querySelector("[data-close]").focus({ preventScroll: true });
 }
+/* --- заказ и вызов официанта --- */
+const TABLE_KEY = "incognito-table", CALL_KEY = "incognito-call-at";
+let tableNo = (() => {
+  const q = new URLSearchParams(location.search), t = parseInt(q.get("table") || q.get("t") || q.get("стол"), 10);
+  if (t >= 1 && t <= 99) { try { sessionStorage.setItem(TABLE_KEY, t); } catch (e) {} return t; }
+  try { const v = parseInt(sessionStorage.getItem(TABLE_KEY), 10); return v >= 1 && v <= 99 ? v : 0; } catch (e) { return 0; }
+})();
+let tableCb = null;
+function askTable(cb){
+  tableCb = cb;
+  const box = $("#tableBox"), inp = $("#tableInput");
+  inp.value = tableNo || ""; box.hidden = false; syncLock();
+  setTimeout(() => inp.focus(), 50);
+}
+function closeTable(){ $("#tableBox").hidden = true; tableCb = null; syncLock(); }
+$("#tableForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = parseInt($("#tableInput").value, 10);
+  if (!(v >= 1 && v <= 99)) { pop($("#tableInput")); $("#tableInput").focus(); return; }
+  tableNo = v; try { sessionStorage.setItem(TABLE_KEY, v); } catch (e) {}
+  const cb = tableCb; closeTable(); paintOrder(); cb && cb();
+});
+$("#tableCancel").addEventListener("click", closeTable);
+
+let toastT = 0;
+function toast(msg, ms = 3200){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), ms);
+}
+async function post(data){
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const r = await fetch(ORDER_URL, { method: "POST", body: JSON.stringify(data), signal: ctl.signal });  /* text/plain — без предварительного запроса */
+    return await r.json();
+  } catch (e) { return { ok: false, error: "network" }; }
+  finally { clearTimeout(timer); }
+}
+const ERR = {
+  wait: "Заказ с этого стола только что отправлен. Подождите немного или позовите официанта.",
+  table: "Проверьте номер стола.",
+  network: "Нет связи. Проверьте интернет и попробуйте ещё раз.",
+};
+function paintOrder(){
+  if (!ORDERING) return;
+  $("#order").hidden = !cart.length;
+  $("#orderTable").innerHTML = tableNo ? `${tableNo} <em>изменить</em>` : "Указать";
+}
+async function sendOrder(){
+  if (!tableNo) { askTable(sendOrder); return; }
+  const b = $("#orderSend"), { sum, unknown } = totals();
+  b.disabled = true; b.textContent = "Отправляем…"; $("#orderErr").textContent = "";
+  const r = await post({ type: "order", table: tableNo, total: sum, unknown,
+    items: cart.map(x => ({ name: x.name, vol: x.vol, cat: x.cat, q: x.q, price: x.price })) });
+  b.disabled = false; b.textContent = "Отправить заказ";
+  if (!r.ok) { $("#orderErr").textContent = ERR[r.error] || "Не получилось отправить. Попробуйте ещё раз или позовите официанта."; return; }
+  cart = []; save(); paintAll();
+  $("#orderDoneText").textContent = `Скоро подойдём к столу ${tableNo}. Захотите что-то ещё — добавьте в список и отправьте снова.`;
+  $("#cartMain").hidden = true; $("#orderDone").hidden = false;
+}
+$("#orderSend").addEventListener("click", sendOrder);
+$("#orderTable").addEventListener("click", () => askTable(null));
+
+let callArmT = 0;
+function callCooldown(){ try { return Math.max(0, 60000 - (Date.now() - Number(sessionStorage.getItem(CALL_KEY) || 0))); } catch (e) { return 0; } }
+async function callWaiter(){
+  const btn = $("#callBtn");
+  if (!tableNo) { askTable(callWaiter); return; }
+  if (callCooldown() > 0) { toast(`Официант уже идёт к столу ${tableNo}`); return; }
+  if (btn.dataset.armed !== "1") {
+    btn.dataset.armed = "1"; toast(`Нажмите ещё раз, чтобы позвать официанта к столу ${tableNo}`, 4000);
+    clearTimeout(callArmT); callArmT = setTimeout(() => { btn.dataset.armed = ""; }, 4000);
+    return;
+  }
+  btn.dataset.armed = ""; clearTimeout(callArmT);
+  toast("Зовём официанта…", 15000);
+  const r = await post({ type: "call", table: tableNo });
+  if (r.ok || r.error === "wait") {
+    try { sessionStorage.setItem(CALL_KEY, Date.now()); } catch (e) {}
+    toast(`Официант идёт к столу ${tableNo}`);
+    btn.classList.add("is-sent"); setTimeout(() => btn.classList.remove("is-sent"), callCooldown());
+  } else toast(ERR[r.error] || "Не получилось позвать официанта. Попробуйте ещё раз.");
+}
+$("#callBtn").addEventListener("click", callWaiter);
+
+if (ORDERING) {
+  document.body.classList.add("ordering");
+  $("#callBtn").hidden = false;
+  $("#cartBarLabel").textContent = "Мой заказ";
+  $("#cartTitle").textContent = "Мой заказ";
+  $("#cartIntro").textContent = "Проверьте заказ и нажмите «Отправить» — официант или кальянщик подойдёт к вашему столу.";
+  $("#wText").textContent = "Устраивайтесь поудобнее. Здесь всё меню: выбирайте и отправляйте заказ прямо отсюда, а если нужна помощь — нажмите «Позвать официанта». Оставайтесь инкогнито.";
+}
+
 function clearCart(b){
   if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Нажмите ещё раз, чтобы очистить"; return; }
   cart = []; save(); paintAll(); paintCart();
@@ -1238,6 +1413,9 @@ document.addEventListener("error", e => {
   const im = e.target; if (!(im instanceof HTMLImageElement)) return;
   const d = im.src.match(/drive\.google\.com\/thumbnail\?id=([\w-]+)/);
   if (d && !im.dataset.retry) { im.dataset.retry = "1"; im.src = `https://lh3.googleusercontent.com/d/${d[1]}=w1000`; return; }
+  /* файл не нашёлся (опечатка, нет на сервере) — показываем стандартное фото раздела */
+  const fb = im.dataset.fb; im.dataset.fb = "";
+  if (fb && fb !== im.getAttribute("src")) { im.src = fb; return; }
   if (im.classList.contains("cat__img")) {
     im.replaceWith(Object.assign(document.createElement("span"), { className: "cat__ph", textContent: im.dataset.catPh || "" }));
   } else if (im.dataset.ph !== undefined) {
