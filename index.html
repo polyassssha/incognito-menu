@@ -1107,7 +1107,7 @@ function table(text){
 const pick = (o, ...keys) => { for (const k of keys) if (o[k]) return o[k]; return ""; };
 /* строки с одинаковым «Названием» в одном разделе → одна позиция с выбором внутри:
    «Кратко» — название варианта (вкуса), «Подробно» — его описание.
-   Цену и объём вариант без цены берёт у первого варианта группы, где они заполнены */
+   Цену и объём вариант без цены берёт у первой строки группы, где они заполнены, — даже если та строка скрыта */
 function groupVariants(items){
   const groups = [], byKey = new Map();
   items.forEach(it => {
@@ -1115,13 +1115,15 @@ function groupVariants(items){
     if (byKey.has(k)) byKey.get(k).push(it); else { const g = [it]; byKey.set(k, g); groups.push(g); }
   });
   return groups.map(g => {
+    const shown = g.filter(x => !x.hidden);
+    if (!shown.length) return null;                                   /* все вкусы скрыты — позиции нет */
     if (g.length === 1) return g[0];
-    const base = g.find(x => x.price !== "") || g[0];
-    const variants = g.map(x => ({ name: x.desc || x.name, about: x.about || "",
+    const base = g.find(x => x.price !== "") || g[0];                 /* цену ищем во всех строках группы, и в скрытых тоже */
+    const variants = shown.map(x => ({ name: x.desc || x.name, about: x.about || "",
       vol: x.price !== "" ? x.vol : base.vol, price: x.price !== "" ? x.price : base.price, img: x.img || "" }));
     return { name: g[0].name, desc: variants.map(v => v.name).join(", "), about: "", vol: "", price: "",
       img: (g.find(x => x.img) || {}).img || "", variants };
-  });
+  }).filter(Boolean);
 }
 
 function buildMenu(menuRows, secRows){
@@ -1134,7 +1136,9 @@ function buildMenu(menuRows, secRows){
   const map = new Map();
   menuRows.forEach(r => {
     const cat = pick(r, "раздел"), name = pick(r, "название");
-    if (!cat || !name || /^нет$/i.test(pick(r, "показывать"))) return;
+    if (!cat || !name) return;
+    /* скрытые строки («Показывать» = нет) не показываются, но их цена и объём остаются доступны вкусам той же группы */
+    const hidden = /^нет$/i.test(pick(r, "показывать"));
     if (!map.has(cat)) map.set(cat, []);
     /* варианты: «Объём»+«Цена», «Объём 2»+«Цена 2», «Объём 3»+«Цена 3» (старый формат «1 л|2 л» тоже понимается) */
     const clean = v => v.replace(/\s/g, "").replace(/₽|руб\.?/gi, "");
@@ -1148,12 +1152,13 @@ function buildMenu(menuRows, secRows){
       vols.push(v); prices.push(pr);
     });
     map.get(cat).push({ name, desc: pick(r, "кратко", "описание"), about: pick(r, "подробно"),
-      vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), img: photoURL(pick(r, "фото")) });
+      vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), img: photoURL(pick(r, "фото")), hidden });
   });
+  [...map.keys()].forEach(t => { const items = groupVariants(map.get(t)); if (items.length) map.set(t, items); else map.delete(t); });  /* раздел, где всё скрыто, не показываем */
   const titles = [...order.filter(t => map.has(t)), ...[...map.keys()].filter(t => !order.includes(t))];
   return titles.map((t, i) => {
     const old = MENU.find(s => s.title === t) || {}, info = secInfo.get(t) || {};
-    const items = groupVariants(map.get(t));
+    const items = map.get(t);
     if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
       tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "", banner: info.banner || "" };
