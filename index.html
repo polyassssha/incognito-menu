@@ -521,6 +521,7 @@ html.locked{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
 
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName">
+  <div class="scroll-hint" aria-hidden="true"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l5 5 5-5"/></svg></div>
   <div class="sheet__grab"></div>
   <div class="info__scroll" id="sheetBody">
   <div class="sheet__img" id="sheetImg">
@@ -960,6 +961,7 @@ function openSheet(it){
   if (!anyTopOpen()) pushLayer();
   closeAll(true);
   sheet.classList.add("open"); sheetBg.classList.add("open"); syncLock();
+  requestAnimationFrame(() => hintItem());
   $("#sheetClose").focus({ preventScroll: true });
 }
 const info = $("#info");
@@ -1134,9 +1136,16 @@ function buildMenu(menuRows, secRows){
     secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banner: photoURL(pick(s, "баннер"), "img/banners/"), note: pick(s, "пометка") });
   });
   const map = new Map();
+  let lastCat = "", lastName = "";
   menuRows.forEach(r => {
-    const cat = pick(r, "раздел"), name = pick(r, "название");
+    /* пустой «Раздел» — тот же, что строкой выше; пустое «Название» при заполненном «Кратко» — ещё один вкус позиции выше */
+    const cat = pick(r, "раздел") || lastCat;
+    /* колонки могут называться по-разному: «Название» / «Категория» / «Позиция», «Кратко» / «Подкатегория» / «Вкус» */
+    let name = pick(r, "название", "категория", "позиция");
+    const sub = pick(r, "кратко", "подкатегория", "подкатегории", "вкус", "описание");
+    if (!name && sub && cat === lastCat) name = lastName;
     if (!cat || !name) return;
+    lastCat = cat; lastName = name;
     /* скрытые строки («Показывать» = нет) не показываются, но их цена и объём остаются доступны вкусам той же группы */
     const hidden = /^нет$/i.test(pick(r, "показывать"));
     if (!map.has(cat)) map.set(cat, []);
@@ -1151,7 +1160,7 @@ function buildMenu(menuRows, secRows){
       if (n && !v && !pr) return;
       vols.push(v); prices.push(pr);
     });
-    map.get(cat).push({ name, desc: pick(r, "кратко", "описание"), about: pick(r, "подробно"),
+    map.get(cat).push({ name, desc: sub, about: pick(r, "подробно"),
       vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), img: photoURL(pick(r, "фото")), hidden });
   });
   [...map.keys()].forEach(t => { const items = groupVariants(map.get(t)); if (items.length) map.set(t, items); else map.delete(t); });  /* раздел, где всё скрыто, не показываем */
@@ -1233,7 +1242,7 @@ function paintBadges(){
     const name = esc(it.name);
     const html = q > 0
       ? `<span class="step step--row"><button type="button" data-dec="${i}" aria-label="Убрать одну: ${name}">−</button><b>${q}</b><button type="button" data-add="${i}" aria-label="Добавить ещё: ${name}">+</button></span>`
-      : `<button class="add" type="button" data-add="${i}" aria-label="Добавить в список: ${name}"></button>`;
+      : `<button class="add" type="button" data-add="${i}" aria-label="Добавить в заказ: ${name}"></button>`;
     const had = Number(c.dataset.state || 0);
     if (q > 0 && had > 0) { const b = c.querySelector(".step b"); if (b && b.textContent !== String(q)) b.textContent = q; }
     else if (had !== q || !c.firstChild) c.innerHTML = html;
@@ -1259,7 +1268,7 @@ function paintSheetOpts(){
   if (!orderable(it)) { $("#sheetOpts").innerHTML = `<div><span class="opt__l">Цена<em>бесплатно</em></span></div>`; return; }
   $("#sheetOpts").innerHTML = prices.map((p, i) => {
     const k = o.key(i), row = cart.find(r => r.k === k);
-    const ctrl = row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">В список</button>`;
+    const ctrl = row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">Добавить</button>`;
     return `<div><span class="opt__l">${esc(vols[i] || "Цена")}<em>${priceHTML(p) || "уточняйте у персонала"}</em></span>${ctrl}</div>`;
   }).join("");
 }
@@ -1273,7 +1282,7 @@ $("#sheetVars").addEventListener("click", e => {
   $("#sheetVars").querySelectorAll("[data-var]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   const d = $("#sheetDesc"); d.textContent = sheetItem.variants[sheetVar].about;
   d.classList.remove("swap"); void d.offsetWidth; d.classList.add("swap");
-  paintSheetOpts();
+  paintSheetOpts(); hintItem();
 });
 function paintBar(){
   const { count, sum, unknown } = totals();
@@ -1369,7 +1378,7 @@ async function sendOrder(){
   b.disabled = false; b.textContent = "Отправить заказ";
   if (!r.ok) { $("#orderErr").textContent = ERR[r.error] || "Не получилось отправить. Попробуйте ещё раз или позовите официанта."; return; }
   cart = []; save(); paintAll();
-  $("#orderDoneText").textContent = `Скоро подойдём к столу ${tableNo}. Захотите что-то ещё — добавьте в список и отправьте снова.`;
+  $("#orderDoneText").textContent = `Скоро подойдём к столу ${tableNo}. Захотите что-то ещё — добавьте и отправьте снова.`;
   $("#cartMain").hidden = true; $("#orderDone").hidden = false;
 }
 $("#orderSend").addEventListener("click", sendOrder);
@@ -1550,7 +1559,7 @@ function watchScroll(sheetEl){
   sheetEl.addEventListener("transitionend", upd);
   return upd;
 }
-const hintCat = watchScroll(catSheet), hintInfo = watchScroll(info), hintCart = watchScroll(cartEl);
+const hintCat = watchScroll(catSheet), hintInfo = watchScroll(info), hintCart = watchScroll(cartEl), hintItem = watchScroll(sheet);
 
 /* --- приветствие: один раз за посещение (пока открыта вкладка) --- */
 const welcome = $("#welcome");
