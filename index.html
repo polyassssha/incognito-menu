@@ -832,7 +832,9 @@ const CAT_DESC = {
   "Постоянным гостям":"Специальные цены",
 };
 function minPrice(sec){
-  const ns = sec.items.flatMap(it => split(it.price)).map(p => parseFloat(p)).filter(n => !isNaN(n) && n > 0);
+  /* у позиций со вкусами цены лежат во вкусах — их тоже учитываем */
+  const ns = sec.items.flatMap(it => it.variants ? it.variants.flatMap(v => split(v.price)) : split(it.price))
+    .map(p => parseFloat(String(p).replace(/\s/g, ""))).filter(n => !isNaN(n) && n > 0);
   return ns.length ? Math.min(...ns) : null;
 }
 function renderCats(menu){
