@@ -214,6 +214,19 @@ body.has-cart .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .cart__clear{margin-top:24px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--mute)}
 .cart__clear[data-armed="1"]{color:var(--paper);border-color:var(--paper)}
 
+/* выбор вкуса / варианта в карточке позиции */
+.vchips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.vchips[hidden]{display:none}
+.vchip{min-height:36px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;color:var(--mute);text-align:left;line-height:1.3;
+  transition:background .25s ease,color .25s ease,border-color .25s ease,transform var(--t-fast) var(--ease)}
+.vchip:active{transform:scale(.96)}
+.vchip[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.vchip i{font-style:normal;display:inline-grid;place-items:center;min-width:20px;height:20px;margin:-2px -6px -2px 8px;padding:0 5px;border-radius:10px;
+  background:var(--paper);color:var(--ink);font-size:12px;font-variant-numeric:lining-nums tabular-nums;vertical-align:1px}
+.vchip[aria-pressed="true"] i{background:var(--ink);color:var(--paper)}
+.sheet__desc.swap{animation:fadeup .4s var(--ease)}
+@keyframes fadeup{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
 /* --- заказ в Telegram и вызов официанта (включается, когда задан ORDER_URL) --- */
 .order{flex:none;display:grid;gap:12px;padding-top:12px;margin-bottom:-8px}
 .order[hidden],.order-done[hidden],.callbtn[hidden]{display:none}
@@ -504,6 +517,7 @@ body.locked{overflow:hidden}
   </div>
   <p class="sheet__cat" id="sheetCat"></p>
   <h3 class="sheet__name" id="sheetName"></h3>
+  <div class="vchips" id="sheetVars" hidden></div>
   <p class="sheet__desc" id="sheetDesc"></p>
   <div class="sheet__opts" id="sheetOpts"></div>
 </div>
@@ -764,7 +778,14 @@ function render(menu){
       }
       let priceCell;
       const p0 = priceHTML(prices[0]);
-      if (!p0) priceCell = `<span class="item__price ask">уточняйте</span>`;
+      if (it.variants) {
+        const all = it.variants.flatMap(v => split(v.price)).map(x => parseFloat(String(x).replace(/\s/g, ""))).filter(n => !isNaN(n));
+        const vs = [...new Set(it.variants.map(v => v.vol))];
+        priceCell = all.length
+          ? `<span class="item__price">${new Set(all).size > 1 ? "от " : ""}${priceHTML(String(Math.min(...all)))}${vs.length === 1 && vs[0] ? `<small>${esc(vs[0].split("|").join(" / "))}</small>` : ""}</span>`
+          : `<span class="item__price ask">уточняйте</span>`;
+      }
+      else if (!p0) priceCell = `<span class="item__price ask">уточняйте</span>`;
       else if (prices.length > 1) priceCell = `<span class="item__price">${prices.map(priceHTML).join(" / ")}<small>${vols.join(" / ")}</small></span>`;
       else priceCell = `<span class="item__price">${p0}${it.vol ? `<small>${esc(it.vol)}</small>` : ""}</span>`;
       html += `<div class="item" role="button" tabindex="0" data-i="${idx}" ${delay}>
@@ -824,7 +845,7 @@ document.addEventListener("click", e => {
   const add = e.target.closest("[data-add]");
   if (add) {
     const it = flat[+add.dataset.add];
-    if (split(it.price).length > 1) openSheet(it);      /* несколько объёмов — выбрать в карточке */
+    if (it.variants || split(it.price).length > 1) openSheet(it);      /* несколько вкусов или объёмов — выбрать в карточке */
     else { cartChange(it, 0, +1); const c = document.querySelector(`[data-ctl="${add.dataset.add}"] b`); if (c) pop(c); }
     return;
   }
@@ -880,9 +901,11 @@ function openSheet(it){
   img.insertAdjacentHTML("beforeend", it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">` : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`);
   $("#sheetCat").textContent = it.cat;
   $("#sheetName").textContent = it.name;
-  $("#sheetDesc").textContent = it.about || it.desc || "";
-  const vols = split(it.vol), prices = split(it.price);
-  sheetItem = it;
+  sheetItem = it; sheetVar = 0;
+  const vc = $("#sheetVars");
+  vc.hidden = !it.variants;
+  vc.innerHTML = it.variants ? it.variants.map((v, i) => `<button type="button" class="vchip" data-var="${i}" aria-pressed="${i === 0}">${esc(v.name)}</button>`).join("") : "";
+  $("#sheetDesc").textContent = it.variants ? it.variants[0].about : (it.about || it.desc || "");
   paintSheetOpts();
   if (!anyTopOpen()) pushLayer();
   closeAll(true);
@@ -1032,6 +1055,25 @@ function table(text){
   });
 }
 const pick = (o, ...keys) => { for (const k of keys) if (o[k]) return o[k]; return ""; };
+/* строки с одинаковым «Названием» в одном разделе → одна позиция с выбором внутри:
+   «Кратко» — название варианта (вкуса), «Подробно» — его описание.
+   Цену и объём вариант без цены берёт у первого варианта группы, где они заполнены */
+function groupVariants(items){
+  const groups = [], byKey = new Map();
+  items.forEach(it => {
+    const k = it.name.toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
+    if (byKey.has(k)) byKey.get(k).push(it); else { const g = [it]; byKey.set(k, g); groups.push(g); }
+  });
+  return groups.map(g => {
+    if (g.length === 1) return g[0];
+    const base = g.find(x => x.price !== "") || g[0];
+    const variants = g.map(x => ({ name: x.desc || x.name, about: x.about || "",
+      vol: x.price !== "" ? x.vol : base.vol, price: x.price !== "" ? x.price : base.price, img: x.img || "" }));
+    return { name: g[0].name, desc: variants.map(v => v.name).join(", "), about: "", vol: "", price: "",
+      img: (g.find(x => x.img) || {}).img || "", variants };
+  });
+}
+
 function buildMenu(menuRows, secRows){
   const secInfo = new Map(), order = [];
   secRows.forEach(s => {
@@ -1061,8 +1103,8 @@ function buildMenu(menuRows, secRows){
   const titles = [...order.filter(t => map.has(t)), ...[...map.keys()].filter(t => !order.includes(t))];
   return titles.map((t, i) => {
     const old = MENU.find(s => s.title === t) || {}, info = secInfo.get(t) || {};
-    const items = map.get(t);
-    if (i === 0 && /кальян/i.test(t) && items[0]) items[0].feature = true;
+    const items = groupVariants(map.get(t));
+    if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
       tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "", banner: info.banner || "" };
   });
@@ -1092,18 +1134,23 @@ function cachedMenu(){
    ===================================================================== */
 const CART_KEY = "incognito-list-v1";
 let cart = [];
-let sheetItem = null;
+let sheetItem = null, sheetVar = 0;
 try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { cart = []; }
 const save = () => { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {} };
 const keyOf = (it, oi) => it.cat + "::" + it.name + "::" + oi;
 const fmt = n => n.toLocaleString("ru-RU").replace(/\s/g, "\u00A0");  /* 1 100 — тысячи через неразрывный пробел */
 
-function cartChange(it, oi, d){
-  const k = keyOf(it, oi);
+/* позиция или её вариант (вкус): откуда брать объёмы, цены и название */
+function optsOf(it, vi){
+  const v = it.variants ? it.variants[vi] : null;
+  return { vols: split(v ? v.vol : it.vol), prices: split(v ? v.price : it.price),
+    name: v ? `${it.name} · ${v.name}` : it.name, key: oi => keyOf(it, v ? `${vi}.${oi}` : oi) };
+}
+function cartChange(it, oi, d, vi = 0){
+  const o = optsOf(it, vi), k = o.key(oi);
   let row = cart.find(r => r.k === k);
   if (!row && d > 0) {
-    const vols = split(it.vol), prices = split(it.price);
-    row = { k, name: it.name, cat: it.cat, vol: vols[oi] || "", price: prices[oi] ?? "", q: 0 };
+    row = { k, name: o.name, cat: it.cat, vol: o.vols[oi] || "", price: o.prices[oi] ?? "", q: 0 };
     cart.push(row);
   }
   if (!row) return;
@@ -1148,16 +1195,29 @@ function stepper(k, q){
 }
 function paintSheetOpts(){
   if (!sheetItem) return;
-  const it = sheetItem, vols = split(it.vol), prices = split(it.price);
+  const it = sheetItem, o = optsOf(it, sheetVar), vols = o.vols, prices = o.prices;
+  if (it.variants) $("#sheetVars").querySelectorAll("[data-var]").forEach(b => {     /* сколько этого вкуса уже в заказе */
+    const vi = +b.dataset.var, q = cart.filter(r => r.k.startsWith(keyOf(it, vi + "."))).reduce((s, r) => s + r.q, 0);
+    let n = b.querySelector("i"); if (!q) { n && n.remove(); return; }
+    if (!n) { n = document.createElement("i"); b.append(n); } n.textContent = q;
+  });
   $("#sheetOpts").innerHTML = prices.map((p, i) => {
-    const k = keyOf(it, i), row = cart.find(r => r.k === k);
+    const k = o.key(i), row = cart.find(r => r.k === k);
     const ctrl = row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">В список</button>`;
     return `<div><span class="opt__l">${esc(vols[i] || "Цена")}<em>${priceHTML(p) || "уточняйте у персонала"}</em></span>${ctrl}</div>`;
   }).join("");
 }
 $("#sheetOpts").addEventListener("click", e => {
   const b = e.target.closest("[data-optadd]"); if (!b || !sheetItem) return;
-  cartChange(sheetItem, +b.dataset.optadd, +1);
+  cartChange(sheetItem, +b.dataset.optadd, +1, sheetVar);
+});
+$("#sheetVars").addEventListener("click", e => {
+  const b = e.target.closest("[data-var]"); if (!b || !sheetItem) return;
+  sheetVar = +b.dataset.var;
+  $("#sheetVars").querySelectorAll("[data-var]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  const d = $("#sheetDesc"); d.textContent = sheetItem.variants[sheetVar].about;
+  d.classList.remove("swap"); void d.offsetWidth; d.classList.add("swap");
+  paintSheetOpts();
 });
 function paintBar(){
   const { count, sum, unknown } = totals();
