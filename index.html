@@ -805,7 +805,7 @@ function render(menu){
           : `<span class="item__price ask">уточняйте</span>`;
       }
       else if (!p0) priceCell = `<span class="item__price ask">уточняйте</span>`;
-      else if (prices.length > 1) priceCell = `<span class="item__price">${prices.map(priceHTML).join(" / ")}<small>${vols.join(" / ")}</small></span>`;
+      else if (prices.length > 1) priceCell = `<span class="item__price">${prices.map(priceHTML).join(" / ")}<small>${esc(vols.join(" / "))}</small></span>`;
       else priceCell = `<span class="item__price">${p0}${it.vol ? `<small>${esc(it.vol)}</small>` : ""}</span>`;
       html += `<div class="item" role="button" tabindex="0" data-i="${idx}" ${delay}>
         <span class="thumb">${thumbHTML(itx)}</span>
@@ -820,6 +820,7 @@ function render(menu){
   });
   renderCats(menu);
   if (typeof initFX === "function") requestAnimationFrame(initFX);
+  if (menuLive) { syncCart(); paintBar(); }   /* сверяем корзину только с меню из таблицы, не со встроенным */
   paintBadges();
 }
 const CAT_DESC = {
@@ -1176,6 +1177,7 @@ function buildMenu(menuRows, secRows){
   });
 }
 const MENU_CACHE = "incognito-menu-cache-v1";
+let menuLive = false;
 async function loadSheet(){
   if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
   try {
@@ -1186,6 +1188,7 @@ async function loadSheet(){
     const json = JSON.stringify(menu);
     let cached = null; try { cached = localStorage.getItem(MENU_CACHE); } catch (e) {}
     try { localStorage.setItem(MENU_CACHE, json); } catch (e) {}
+    menuLive = true;
     if (json !== cached) render(menu);
   } catch (e) { /* таблица недоступна — остаётся то, что уже показано */ }
 }
@@ -1201,8 +1204,27 @@ function cachedMenu(){
 const CART_KEY = "incognito-list-v1";
 let cart = [];
 let sheetItem = null, sheetVar = 0;
-try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { cart = []; }
-const save = () => { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {} };
+const CART_TTL = 12 * 3600e3;   /* корзина живёт 12 часов — на следующий визит начинается заново */
+try {
+  const raw = JSON.parse(localStorage.getItem(CART_KEY));
+  cart = Array.isArray(raw) ? [] : (raw && Date.now() - raw.t < CART_TTL ? raw.items || [] : []);   /* старый формат без даты — сбрасываем */
+} catch (e) { cart = []; }
+const save = () => { try { localStorage.setItem(CART_KEY, JSON.stringify({ t: Date.now(), items: cart })); } catch (e) {} };
+/* после каждой загрузки меню: убираем из корзины то, чего больше нет (скрыли, удалили),
+   и подставляем актуальные цены и объёмы */
+function syncCart(){
+  if (!cart.length) return;
+  const live = new Map();
+  flat.forEach(it => {
+    (it.variants ? it.variants.map((v, vi) => vi) : [0]).forEach(vi => {
+      const o = optsOf(it, vi);
+      o.prices.forEach((p, oi) => live.set(o.key(oi), { name: o.name, vol: o.vols[oi] || "", price: p }));
+    });
+  });
+  const before = JSON.stringify(cart);
+  cart = cart.filter(r => live.has(r.k)).map(r => ({ ...r, ...live.get(r.k) }));
+  if (JSON.stringify(cart) !== before) save();
+}
 const keyOf = (it, oi) => it.cat + "::" + it.name + "::" + oi;
 const fmt = n => n.toLocaleString("ru-RU").replace(/\s/g, "\u00A0");  /* 1 100 — тысячи через неразрывный пробел */
 
@@ -1210,7 +1232,7 @@ const fmt = n => n.toLocaleString("ru-RU").replace(/\s/g, "\u00A0");  /* 1 100 �
 function optsOf(it, vi){
   const v = it.variants ? it.variants[vi] : null;
   return { vols: split(v ? v.vol : it.vol), prices: split(v ? v.price : it.price),
-    name: v ? `${it.name} · ${v.name}` : it.name, key: oi => keyOf(it, v ? `${vi}.${oi}` : oi) };
+    name: v ? `${it.name} · ${v.name}` : it.name, key: oi => keyOf(it, v ? `${v.name}~${oi}` : oi) };
 }
 function cartChange(it, oi, d, vi = 0){
   const o = optsOf(it, vi), k = o.key(oi);
@@ -1263,7 +1285,7 @@ function paintSheetOpts(){
   if (!sheetItem) return;
   const it = sheetItem, o = optsOf(it, sheetVar), vols = o.vols, prices = o.prices;
   if (it.variants) $("#sheetVars").querySelectorAll("[data-var]").forEach(b => {     /* сколько этого вкуса уже в заказе */
-    const vi = +b.dataset.var, q = cart.filter(r => r.k.startsWith(keyOf(it, vi + "."))).reduce((s, r) => s + r.q, 0);
+    const vi = +b.dataset.var, q = cart.filter(r => r.k.startsWith(keyOf(it, it.variants[vi].name + "~"))).reduce((s, r) => s + r.q, 0);
     let n = b.querySelector("i"); if (!q) { n && n.remove(); return; }
     if (!n) { n = document.createElement("i"); b.append(n); } n.textContent = q;
   });
@@ -1372,6 +1394,7 @@ function paintOrder(){
   $("#orderTable").innerHTML = tableNo ? `${tableNo} <em>изменить</em>` : "Указать";
 }
 async function sendOrder(){
+  if (!menuLive) { $("#orderErr").textContent = "Меню ещё не загрузилось — проверьте интернет и попробуйте через минуту или позовите официанта."; loadSheet(); return; }
   if (!tableNo) { askTable(sendOrder); return; }
   const b = $("#orderSend"), { sum, unknown } = totals();
   b.disabled = true; b.textContent = "Отправляем…"; $("#orderErr").textContent = "";
@@ -1580,7 +1603,10 @@ function maybeWelcome(){
   welcome.hidden = false; document.body.classList.add("welcoming"); syncLock();
 }
 
-render(cachedMenu() || MENU);
+/* menuLive: меню пришло из таблицы (сейчас или из сохранённой копии). Встроенное меню — запасное, из него не заказывают */
+const startMenu = cachedMenu();
+menuLive = !!startMenu;
+render(startMenu || MENU);
 paintBar();
 renderHours();
 renderRules();
