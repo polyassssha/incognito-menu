@@ -172,16 +172,19 @@ a{color:inherit}
 .pop{animation:popk .5s var(--ease-io)}
 @keyframes popk{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
 .cartbar.pop{animation:barpop .5s var(--ease-io)}
-@keyframes barpop{0%{transform:translate(-50%,0) scale(1)}40%{transform:translate(-50%,0) scale(1.02)}100%{transform:translate(-50%,0) scale(1)}}
+@keyframes barpop{0%{transform:scale(1)}40%{transform:scale(1.02)}100%{transform:scale(1)}}
 
-.cartbar{position:fixed;left:50%;bottom:calc(var(--pad) + env(safe-area-inset-bottom));z-index:30;
-  width:calc(min(100vw, 480px) - 2 * var(--pad));display:flex;justify-content:space-between;align-items:center;gap:12px;
+/* нижний ряд: «Позвать официанта» + «Мой заказ», раскладка — флексом, без ручных сдвигов */
+.dock{position:fixed;z-index:45;left:50%;bottom:calc(var(--pad) + env(safe-area-inset-bottom));transform:translateX(-50%);
+  width:min(100vw, 480px);padding:0 var(--pad);display:flex;align-items:center;gap:8px;pointer-events:none}
+.dock > *{pointer-events:auto}
+.cartbar{position:relative;flex:1 1 0;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:12px;
   height:52px;padding:0 var(--pad) 0 12px;border-radius:999px;background:var(--paper);color:var(--ink);
   box-shadow:0 10px 30px rgba(0,0,0,.5);
   /* спрятана: уезжает ниже экрана с учётом нижнего отступа iPhone и полностью скрыта */
-  transform:translate(-50%,calc(100% + 40px + env(safe-area-inset-bottom)));visibility:hidden;opacity:0;pointer-events:none;
+  transform:translateY(calc(100% + 40px + env(safe-area-inset-bottom)));visibility:hidden;opacity:0;pointer-events:none;
   transition:transform var(--t-sheet) var(--ease-sheet),opacity .4s ease,visibility 0s var(--t-sheet)}
-.cartbar.show{transform:translate(-50%,0);visibility:visible;opacity:1;pointer-events:auto;
+.cartbar.show{transform:none;visibility:visible;opacity:1;pointer-events:auto;
   transition:transform var(--t-sheet) var(--ease-sheet),opacity .3s ease,visibility 0s}
 .cartbar__l{display:flex;align-items:center;gap:12px}
 .cartbar__n{min-width:24px;height:24px;padding:0 8px;border-radius:999px;background:var(--ink);color:var(--paper);display:grid;place-items:center}
@@ -245,19 +248,20 @@ body.has-cart .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .order-done .section__note{max-width:30ch;margin:0}
 .order-done .order__send{margin-top:16px}
 
-.callbtn{position:fixed;z-index:45;left:calc(50% - min(100vw, 480px) / 2 + var(--pad));bottom:calc(var(--pad) + env(safe-area-inset-bottom));
-  height:52px;display:flex;align-items:center;gap:10px;padding:0 20px 0 15px;border-radius:999px;
+.callbtn{position:relative;flex:none;
+  height:52px;min-width:52px;display:flex;align-items:center;justify-content:center;gap:0;padding:0 20px 0 15px;border-radius:999px;
   background:rgba(18,18,19,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);color:var(--paper);
   box-shadow:0 10px 30px rgba(0,0,0,.5);transition:padding var(--t) var(--ease),background .3s ease,color .3s ease,transform var(--t-fast) var(--ease);
   animation:rise .8s .6s var(--ease) backwards}
 .callbtn:active{transform:scale(.95)}
 .callbtn svg{width:20px;height:20px;flex:none}
-.callbtn__t{white-space:nowrap;overflow:hidden;max-width:220px;transition:max-width var(--t) var(--ease),opacity .25s ease}
-body.has-cart .callbtn{padding:0 15px}
-body.has-cart .callbtn__t{max-width:0;opacity:0}
+.callbtn__t{white-space:nowrap;overflow:hidden;max-width:220px;margin-left:10px;
+  transition:max-width var(--t) var(--ease),margin var(--t) var(--ease),opacity .25s ease}
+/* когда есть заказ, колокольчик сжимается в круг 52×52, остальное место — у «Моего заказа» */
+body.has-cart .callbtn{width:52px;padding:0}
+body.has-cart .callbtn__t{max-width:0;margin-left:0;opacity:0}
 .callbtn[data-armed="1"]{background:var(--paper);color:var(--ink)}
 .callbtn.is-sent{color:var(--mute)}
-body.ordering.has-cart .cartbar{left:calc(50% + 30px);width:calc(min(100vw, 480px) - 2 * var(--pad) - 60px)}
 body.ordering .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 
 .toast{position:fixed;z-index:47;left:50%;bottom:calc(var(--pad) + 64px + env(safe-area-inset-bottom));transform:translate(-50%,8px);
@@ -395,7 +399,7 @@ body.has-cart .sheet{--fade:84px;--hint:calc(var(--pad) + 52px + 16px + env(safe
 /* шторка категории: под ней — главная, над ней — карточка позиции, список и панель «Мой список» */
 .sheet--cat{padding-top:8px;height:90vh;height:90dvh;display:flex;flex-direction:column;z-index:41}
 .sheet--cat .info__scroll{flex:1;padding-bottom:24px}
-body.has-cart .sheet--cat .info__scroll{padding-bottom:96px}
+body.has-cart .sheet--cat .info__scroll,body.ordering .sheet--cat .info__scroll{padding-bottom:96px}
 .sheet--cat .section{display:none;padding:0 0 8px}
 .sheet--cat .section.on{display:block}
 .sheet--cat .section__head{padding-right:52px;min-height:36px}
@@ -403,8 +407,16 @@ body.has-cart .sheet--cat .info__scroll{padding-bottom:96px}
 .sheet-bg--cat{z-index:40}
 #sheetBg{z-index:48}
 #sheet,#info,#cart{z-index:49}
-.cartbar{z-index:45}
-body.locked{overflow:hidden}
+
+/* фон под шторками и окнами не прокручивается: страница «замораживается» на месте (работает и в Safari на iPhone) */
+body.locked{overflow:hidden;position:fixed;left:0;right:0;width:100%}
+body.top-open #catBody{overflow:hidden}
+/* карточка позиции: если не помещается (длинное описание, много вкусов) — прокручивается внутри */
+#sheet{max-height:94dvh;display:flex;flex-direction:column}
+#sheetBody{flex:1;min-height:0}
+.welcome__card{max-height:calc(100dvh - 2 * var(--pad));overflow-y:auto;overscroll-behavior:contain}
+html.locked{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
+.sheet-bg,#catBg,.welcome{touch-action:none;overscroll-behavior:contain}
 .info__scroll{overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .info__scroll .section__head{margin:6px 0 16px}
 .sheet__close--info{background:var(--ink);top:var(--pad)}
@@ -510,6 +522,7 @@ body.locked{overflow:hidden}
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName">
   <div class="sheet__grab"></div>
+  <div class="info__scroll" id="sheetBody">
   <div class="sheet__img" id="sheetImg">
     <button class="sheet__close" id="sheetClose" type="button" aria-label="Закрыть">
       <svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8"><path d="M1 1l12 12M13 1L1 13"/></svg>
@@ -520,18 +533,21 @@ body.locked{overflow:hidden}
   <div class="vchips" id="sheetVars" hidden></div>
   <p class="sheet__desc" id="sheetDesc"></p>
   <div class="sheet__opts" id="sheetOpts"></div>
+  </div>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="dock">
 <button class="callbtn" id="callBtn" type="button" hidden aria-label="Позвать официанта">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path d="M12 5V3.5"/></svg>
   <span class="callbtn__t">Позвать официанта</span>
 </button>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <button class="cartbar" id="cartBar" type="button" data-cart aria-label="Открыть мой список">
   <span class="cartbar__l"><span class="cartbar__n" id="cartCount">0</span><span id="cartBarLabel">Мой список</span></span>
   <span class="cartbar__s" id="cartSum"></span>
 </button>
+</div>
 
 <div class="sheet sheet--info" id="cart" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
   <div class="scroll-hint" aria-hidden="true"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l5 5 5-5"/></svg></div>
@@ -733,6 +749,8 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 const split = s => String(s ?? "").split("|").map(x => x.trim());
 const initials = n => n.replace(/[^A-Za-zА-Яа-яЁё ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 
+/* бесплатное (цена 0, например настольные игры) — просто информация, в заказ не добавляется */
+function orderable(it){ return !!it.variants || !split(it.price).length || split(it.price).some(p => parseFloat(String(p).replace(/\s/g, "")) !== 0); }
 function priceHTML(p){
   if (p === "" || p == null) return null;
   if (String(p) === "0") return "бесплатно";
@@ -773,7 +791,7 @@ function render(menu){
           <p class="feature__name">${esc(it.name)}</p>
           <div class="feature__row"><span class="feature__price">${priceHTML(prices[0])}</span>
           <span class="feature__time">Готовится 15–20 минут</span></div>
-          <span class="ctl ctl--feature" data-ctl="${idx}"></span></div>`;
+          ${orderable(it) ? `<span class="ctl ctl--feature" data-ctl="${idx}"></span>` : ""}</div>`;
         return;
       }
       let priceCell;
@@ -791,7 +809,7 @@ function render(menu){
       html += `<div class="item" role="button" tabindex="0" data-i="${idx}" ${delay}>
         <span class="thumb">${thumbHTML(itx)}</span>
         <span><span class="item__name">${esc(it.name)}</span>${it.desc ? `<span class="item__desc" style="display:block">${esc(it.desc)}</span>` : ""}</span>
-        <span class="item__right">${priceCell}<span class="ctl" data-ctl="${idx}"></span></span></div>`;
+        <span class="item__right">${priceCell}${orderable(it) ? `<span class="ctl" data-ctl="${idx}"></span>` : ""}</span></div>`;
     });
     html += `</div>`;
     if (sec.tips?.length) html += `<div class="tips" style="animation-delay:${120 + Math.min(sec.items.length,8)*50 + 120}ms"><p class="tips__title">${esc(sec.tipsTitle || "Советы")}</p><ol>${
@@ -864,8 +882,40 @@ const catSheet = $("#catSheet"), catBg = $("#catBg");
 /* слои: пока открыта любая шторка, главная не прокручивается; системная «Назад» закрывает верхнюю шторку */
 let layers = 0;
 function pushLayer(){ layers++; try { history.pushState({ incognito: layers }, ""); } catch (e) {} }
-function syncLock(){ document.body.classList.toggle("locked", [catSheet, sheet, info, cartEl].some(n => n.classList.contains("open")) || !$("#welcome").hidden || !$("#tableBox").hidden); }
+let lockY = 0;
+function syncLock(){
+  const on = [catSheet, sheet, info, cartEl].some(n => n.classList.contains("open")) || !$("#welcome").hidden || !$("#tableBox").hidden;
+  const b = document.body, was = b.classList.contains("locked");
+  b.classList.toggle("top-open", anyTopOpen());
+  if (on === was) return;
+  if (on) {                                   /* запоминаем, где была страница, и фиксируем её */
+    lockY = window.scrollY;
+    b.style.top = -lockY + "px";
+    b.classList.add("locked"); document.documentElement.classList.add("locked");
+  } else {                                    /* возвращаем страницу туда же, без прыжка и плавной прокрутки */
+    b.classList.remove("locked"); document.documentElement.classList.remove("locked");
+    b.style.top = "";
+    window.scrollTo({ top: lockY, behavior: "instant" });
+  }
+}
 function anyTopOpen(){ return [sheet, info, cartEl].some(n => n.classList.contains("open")); }
+
+/* iPhone: даже у закреплённой страницы Safari тянет её пальцем (пружинит, уезжает адресная строка).
+   Пока открыто окно или шторка, пропускаем движение пальца только там, где есть что прокручивать,
+   и только пока список не упёрся в край — иначе гасим его. Стягивание шторки вниз работает как раньше. */
+let touchY = 0;
+document.addEventListener("touchstart", e => { touchY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener("touchmove", e => {
+  if (!document.body.classList.contains("locked") || e.touches.length > 1) return;
+  const y = e.touches[0].clientY, dy = y - touchY; touchY = y;
+  const top = [...document.querySelectorAll(".sheet.open")].pop() || catSheet;   /* верхний открытый слой */
+  const sc = e.target.closest(".info__scroll, .welcome__card");
+  const live = sc && (top.contains(sc) || sc.classList.contains("welcome__card"))
+    && sc.scrollHeight > sc.clientHeight + 1
+    && !(dy > 0 && sc.scrollTop <= 0)                                              /* вверху — тянуть вниз нечего */
+    && !(dy < 0 && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1);        /* внизу — тянуть вверх нечего */
+  if (!live && e.cancelable) e.preventDefault();
+}, { passive: false });
 /* закрытие из интерфейса: через историю, чтобы «Назад» и крестик вели себя одинаково */
 function uiClose(){
   if (layers > 0) { try { history.back(); return; } catch (e) {} }
@@ -901,7 +951,7 @@ function openSheet(it){
   img.insertAdjacentHTML("beforeend", it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">` : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`);
   $("#sheetCat").textContent = it.cat;
   $("#sheetName").textContent = it.name;
-  sheetItem = it; sheetVar = 0;
+  sheetItem = it; sheetVar = 0; $("#sheetBody").scrollTop = 0;
   const vc = $("#sheetVars");
   vc.hidden = !it.variants;
   vc.innerHTML = it.variants ? it.variants.map((v, i) => `<button type="button" class="vchip" data-var="${i}" aria-pressed="${i === 0}">${esc(v.name)}</button>`).join("") : "";
@@ -1201,6 +1251,7 @@ function paintSheetOpts(){
     let n = b.querySelector("i"); if (!q) { n && n.remove(); return; }
     if (!n) { n = document.createElement("i"); b.append(n); } n.textContent = q;
   });
+  if (!orderable(it)) { $("#sheetOpts").innerHTML = `<div><span class="opt__l">Цена<em>бесплатно</em></span></div>`; return; }
   $("#sheetOpts").innerHTML = prices.map((p, i) => {
     const k = o.key(i), row = cart.find(r => r.k === k);
     const ctrl = row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">В список</button>`;
