@@ -323,6 +323,9 @@ body.ordering .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .sheet__grab{width:40px;height:4px;border-radius:4px;background:#3a3a37;margin:0 auto 16px;box-shadow:0 0 0 12px transparent}
 .sheet__img{aspect-ratio:1/1;max-height:52vh;margin:0 auto;border-radius:var(--r-lg);overflow:hidden;position:relative;background:var(--ink)}
 .sheet__img img{width:100%;height:100%;object-fit:cover}
+/* смена фото при выборе вкуса: новое проявляется поверх старого */
+.sheet__img .swap-in{position:absolute;inset:0;animation:imgIn .45s var(--ease) both}
+@keyframes imgIn{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
 .sheet__cat{color:var(--mute);margin-top:16px}
 .sheet__name{margin-top:6px}
 .sheet__desc{color:var(--soft);margin-top:8px}
@@ -779,7 +782,7 @@ function render(menu){
     if (sec.note) html += `<p class="section__note">${esc(sec.note)}</p>`;
     html += `<div class="list">`;
     sec.items.forEach((it, ii) => {
-      const idx = flat.push({ ...it, img: it.img || sec.img || CAT_IMG[sec.title] || "", fb: CAT_IMG[sec.title] || "", cat: sec.title }) - 1;
+      const idx = flat.push({ ...it, img: it.img || sec.img || CAT_IMG[sec.title] || "", secImg: sec.img || CAT_IMG[sec.title] || "", fb: CAT_IMG[sec.title] || "", cat: sec.title }) - 1;
       const itx = flat[idx];
       const vols = split(it.vol), prices = split(it.price);
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
@@ -949,10 +952,23 @@ catBg.addEventListener("click", uiClose);
 
 /* --- карточка позиции --- */
 const sheet = $("#sheet"), sheetBg = $("#sheetBg");
+/* фото в карточке позиции; у вкуса — своё фото, а если его нет — фото раздела (не фото соседнего вкуса) */
+function sheetPhoto(it, vi){
+  const v = it.variants ? it.variants[vi] : null;
+  return v ? (v.img || it.secImg || "") : (it.img || "");
+}
+function setSheetImg(it, vi, animate){
+  const box = $("#sheetImg"), src = sheetPhoto(it, vi);
+  const old = [...box.querySelectorAll("img,.ph")];
+  if (animate && old.length === 1 && old[0].getAttribute("src") === src) return;     /* то же фото — ничего не меняем */
+  box.insertAdjacentHTML("beforeend", src
+    ? `<img src="${esc(src)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}"${animate ? ' class="swap-in"' : ""}>`
+    : `<span class="ph${animate ? " swap-in" : ""}" aria-hidden="true">${initials(it.name)}</span>`);
+  if (!animate) old.forEach(n => n.remove());
+  else setTimeout(() => old.forEach(n => n.remove()), 450);                             /* старое уходит, когда новое проявилось */
+}
 function openSheet(it){
-  const img = $("#sheetImg");
-  img.querySelectorAll("img,.ph").forEach(n => n.remove());
-  img.insertAdjacentHTML("beforeend", it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">` : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`);
+  setSheetImg(it, 0, false);
   $("#sheetCat").textContent = it.cat;
   $("#sheetName").textContent = it.name;
   sheetItem = it; sheetVar = 0; $("#sheetBody").scrollTop = 0;
@@ -1304,6 +1320,7 @@ $("#sheetVars").addEventListener("click", e => {
   const b = e.target.closest("[data-var]"); if (!b || !sheetItem) return;
   sheetVar = +b.dataset.var;
   $("#sheetVars").querySelectorAll("[data-var]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  setSheetImg(sheetItem, sheetVar, true);
   const d = $("#sheetDesc"); d.textContent = sheetItem.variants[sheetVar].about;
   d.classList.remove("swap"); void d.offsetWidth; d.classList.add("swap");
   paintSheetOpts(); hintItem();
