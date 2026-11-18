@@ -880,7 +880,7 @@ document.addEventListener("click", e => {
   const dec = e.target.closest("[data-dec]");
   if (dec) { decItem(flat[+dec.dataset.dec]); return; }
   const st = e.target.closest("[data-step]");
-  if (st) { const [k, d] = st.dataset.step.split("~"); cartStep(k, +d); return; }
+  if (st) { const v = st.dataset.step, i = v.lastIndexOf("~"); cartStep(v.slice(0, i), +v.slice(i + 1)); return; }   /* в ключе вкуса тоже есть «~» — делим по последнему */
   if (e.target.closest("[data-cart]")) { openCart(); return; }
   if (e.target.closest("#cartClear")) { clearCart(e.target.closest("#cartClear")); return; }
   const it = e.target.closest("[data-i]");
