@@ -648,19 +648,8 @@ const ADDRESS = "г. Бузулук, ул. Ново-Чапаевская, 11В";
 const ORDER_URL = "https://script.google.com/macros/s/AKfycbzvhy1uNBUQPtJq5VSH4ggMZEZIqS3W5B1D1AiKKdsZR6DGfy7ALiALCiSX0oDBX5pc/exec";
 const ORDERING = !!ORDER_URL;
 
-/* Фото категорий (временные, сгенерированы в Figma AI). Используются, пока у позиции нет своего фото в поле img. */
-const CAT_IMG = {
-  "Кальян":"img/categories/hookah.jpg",
-  "Горячие напитки":"img/categories/hot.jpg",
-  "Холодные напитки":"img/categories/cold.jpg",
-  "Пиво":"img/categories/beer.jpg",
-  "Снеки":"img/categories/snacks.jpg",
-  "Дополнительно":"img/categories/extra.jpg",
-  "Постоянным гостям":"img/categories/regulars.jpg"
-};
+/* Фото берутся только из таблицы (колонки «Фото» и «Баннер») по имени файла из папок на GitHub — в коде картинок нет */
 
-/* Фото конкретных позиций */
-const IMG_CORONA = "img/items/corona.jpg";
 
 /* Фото: путь к файлу рядом с сайтом, например "img/mohito.jpg". Пока пусто — показывается заглушка. */
 const MENU = [
@@ -703,7 +692,7 @@ const MENU = [
     { name:"Козел светлый", price:"200", img:"", about:"Чешский светлый лагер с мягкой хмелевой горчинкой." },
     { name:"Козел тёмный", price:"200", img:"", about:"Тёмный лагер с карамельными и солодовыми нотами." },
     { name:"Амстердам", price:"200", img:"", about:"Пиво Amsterdam. Сорт уточняйте у персонала." },
-    { name:"Corona Extra", desc:"Импортное", vol:"0,33 л", price:"250", img:IMG_CORONA, about:"Мексиканский светлый лагер, лёгкий и освежающий." },
+    { name:"Corona Extra", desc:"Импортное", vol:"0,33 л", price:"250", about:"Мексиканский светлый лагер, лёгкий и освежающий." },
     { name:"Guinness", desc:"Импортное, азотированное", price:"400", img:"", about:"Ирландский тёмный стаут. Азот даёт плотную кремовую пену и бархатный вкус." },
   ]},
   { id:"snacks", title:"Снеки", items:[
@@ -785,13 +774,13 @@ function render(menu){
     if (sec.note) html += `<p class="section__note">${esc(sec.note)}</p>`;
     html += `<div class="list">`;
     sec.items.forEach((it, ii) => {
-      const idx = flat.push({ ...it, img: it.img || sec.img || CAT_IMG[sec.title] || "", secImg: sec.img || CAT_IMG[sec.title] || "", fb: CAT_IMG[sec.title] || "", cat: sec.title }) - 1;
+      const idx = flat.push({ ...it, img: it.img || sec.img || "", secImg: sec.img || "", fb: "", cat: sec.title }) - 1;
       const itx = flat[idx];
       const vols = split(it.vol), prices = split(it.price);
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
       if (it.feature) {
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${(sec.banner || itx.img) ? `<img class="feature__img" src="${esc(still(sec.banner || itx.img))}" data-fb="${esc(itx.fb)}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+          ${sec.banner ? `<img class="feature__img" src="${esc(still(sec.banner))}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
             <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
             <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
           <p class="feature__label">Фирменная позиция</p>
@@ -848,13 +837,13 @@ function renderCats(menu){
   /* раскладка: первая карточка высокая (слева, 2 ряда), дальше по две в ряд; если последней не хватает пары — она во всю ширину */
   const lone = menu.length > 3 && (menu.length - 3) % 2 === 1;
   $("#catsGrid").innerHTML = menu.map((s, i) => {
-    const img = s.img || CAT_IMG[s.title];
+    const img = s.img || "";
     const mp = minPrice(s);
     const cls = i === 0 ? " cat--tall" : (lone && i === menu.length - 1 ? " cat--wide" : "");
     const letter = esc((s.title.trim()[0] || "").toUpperCase());
     return `<button class="cat${cls}" type="button" data-cat="${s.id}" style="animation-delay:${250 + i*70}ms">
       <span class="cat__count">${s.items.length}</span>
-      ${img ? `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}" data-fb="${esc(CAT_IMG[s.title] || "")}">` : `<span class="cat__ph" aria-hidden="true">${letter}</span>`}
+      ${img ? `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}">` : `<span class="cat__ph" aria-hidden="true">${letter}</span>`}
       <canvas class="fx" aria-hidden="true"></canvas>
       <span class="cat__txt"><b>${esc(s.title)}</b>${(s.desc || CAT_DESC[s.title]) ? `<small>${esc(s.desc || CAT_DESC[s.title])}</small>` : ""}
       ${mp ? `<em>от ${fmt(mp)} ₽</em>` : ""}</span>
@@ -980,6 +969,17 @@ function setSheetImg(it, vi, animate){
   if (!animate) old.forEach(n => n.remove());
   else setTimeout(() => old.forEach(n => n.remove()), 450);                             /* старое уходит, когда новое проявилось */
 }
+/* у вкусов описания разной длины: резервируем высоту под самое длинное, чтобы шторка не прыгала при переключении */
+function fitDesc(it){
+  const d = $("#sheetDesc"); d.style.minHeight = "";
+  if (!it || !it.variants || it.variants.length < 2) return;
+  const m = d.cloneNode(false); m.removeAttribute("id");
+  m.style.cssText = `position:absolute;visibility:hidden;left:0;top:0;width:${d.clientWidth}px;min-height:0`;
+  d.parentNode.appendChild(m);
+  let h = 0; it.variants.forEach(v => { m.textContent = v.about || ""; h = Math.max(h, m.offsetHeight); });
+  m.remove(); d.style.minHeight = h + "px";
+}
+addEventListener("resize", () => { if (sheet.classList.contains("open")) fitDesc(sheetItem); });
 function openSheet(it){
   setSheetImg(it, 0, false);
   $("#sheetCat").textContent = it.cat;
@@ -989,6 +989,7 @@ function openSheet(it){
   vc.hidden = !it.variants;
   vc.innerHTML = it.variants ? it.variants.map((v, i) => `<button type="button" class="vchip" data-var="${i}" aria-pressed="${i === 0}">${esc(v.name)}</button>`).join("") : "";
   $("#sheetDesc").textContent = it.variants ? it.variants[0].about : (it.about || it.desc || "");
+  fitDesc(it);
   paintSheetOpts();
   if (!anyTopOpen()) pushLayer();
   closeAll(true);
@@ -1119,6 +1120,7 @@ function photoURL(v, dir = "img/items/"){
   if (d) return `https://drive.google.com/thumbnail?id=${d[1]}&sz=w1000`;
   if (/^(https?:|data:)/.test(v)) return v;
   v = v.replace(/^\/+/, "");
+  if (!/\.\w{2,5}$/.test(v)) v += ".jpg";                       /* имя без расширения — считаем, что это .jpg */
   return v.includes("/") ? v : dir + v;
 }
 /* CSV → массив объектов по названиям колонок (порядок колонок в таблице не важен) */
@@ -1594,7 +1596,7 @@ document.addEventListener("error", e => {
   const im = e.target; if (!(im instanceof HTMLImageElement)) return;
   const d = im.src.match(/drive\.google\.com\/thumbnail\?id=([\w-]+)/);
   if (d && !im.dataset.retry) { im.dataset.retry = "1"; im.src = `https://lh3.googleusercontent.com/d/${d[1]}=w1000`; return; }
-  /* файл не нашёлся (опечатка, нет на сервере) — показываем стандартное фото раздела */
+  /* файл не нашёлся (опечатка, нет на сервере) — показываем заглушку с буквой */
   const fb = im.dataset.fb; im.dataset.fb = "";
   if (fb && fb !== im.getAttribute("src")) { im.src = fb; return; }
   if (im.classList.contains("cat__img")) {
