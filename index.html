@@ -375,11 +375,6 @@ body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animat
 .cat--wide .cat__count{left:12px;right:auto}
 
 /* ---------- живые карточки ---------- */
-/* «Дополнительно»: геймпад с фишками медленно парит вверх-вниз, без поворота */
-/* фото чуть увеличено (запас по краям), поэтому сдвиг не открывает края рамки */
-.cat--float .cat__img{scale:1.04;animation:hover 5s var(--ease-io) infinite;transform-origin:50% 40%}
-@keyframes hover{0%,100%{translate:0 3px}50%{translate:0 -3px}}
-body.locked .cat--float .cat__img,body.welcoming .cat--float .cat__img{animation-play-state:paused}
 .fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;mix-blend-mode:screen}
 .cat__txt,.cat__count{z-index:1}
 .feature .fx{z-index:0}
@@ -1502,13 +1497,7 @@ new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
    ЖИВЫЕ КАРТОЧКИ: дым, пар, пузырьки, свечение + наклон за пальцем.
    Точки привязаны к фото (доли ширины/высоты кадра).
    ===================================================================== */
-const FX = {
-  "Горячие напитки":   [{ t:"steam",  x:.68, y:.50, rate:.6, size:.7 }, { t:"steam", x:.62, y:.38, rate:.25, size:.5 }],
-  "Холодные напитки":  [{ t:"bubbles", x0:.38, x1:.60, y0:.86, y1:.34, rate:.7 }],
-  "Пиво":              [{ t:"bubbles", x0:.24, x1:.42, y0:.80, y1:.32, rate:.45 }, { t:"bubbles", x0:.58, x1:.76, y0:.80, y1:.32, rate:.35, dark:true }],
-  "Дополнительно":     [{ t:"float" }],
-  "Постоянным гостям": [{ t:"glow", x:.40, y:.24, r:.16 }, { t:"smoke", x:.40, y:.18, rate:.5, size:.6 }],
-};
+const FX = {};   /* анимации на карточках разделов выключены: фото статичные */
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fxList = [];
 function attachFX(host, img, spec){
