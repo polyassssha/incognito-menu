@@ -322,7 +322,7 @@ body.ordering .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .sheet-bg.open{opacity:1;pointer-events:auto}
 .sheet__grab{width:40px;height:4px;border-radius:4px;background:#3a3a37;margin:0 auto 16px;box-shadow:0 0 0 12px transparent}
 .sheet__img{aspect-ratio:1/1;max-height:52vh;margin:0 auto;border-radius:var(--r-lg);overflow:hidden;position:relative;background:var(--ink)}
-.sheet__img img{width:100%;height:100%;object-fit:cover}
+.sheet__img img,.sheet__img video{display:block;width:100%;height:100%;object-fit:cover}
 /* смена фото при выборе вкуса: новое проявляется поверх старого */
 .sheet__img .swap-in{position:absolute;inset:0;animation:imgIn .45s var(--ease) both}
 @keyframes imgIn{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
@@ -348,9 +348,12 @@ body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animat
 .welcome__title{margin-top:8px}
 .welcome__text{margin:12px auto 0;max-width:34ch;color:var(--soft)}
 .welcome__hours{display:flex;flex-direction:column;align-items:center;gap:8px;margin:24px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.welcome__status{display:inline-flex;align-items:center;gap:8px}
-.welcome__status i{width:6px;height:6px;border-radius:50%;background:var(--mute)}
-.welcome__status.open i{background:var(--paper);animation:pulse 2.4s infinite}
+.welcome__status{display:inline-flex;align-items:center;gap:8px;line-height:1}
+.welcome__status #wStatusText{line-height:1;padding-top:1px}   /* заглавные без нижних выносных: центруем точку по высоте букв */
+/* индикатор: в нерабочее время белый, во время работы зелёный с мягкой пульсацией */
+.welcome__status i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--paper)}
+.welcome__status.open i{background:#3ccf6e;animation:pulseGreen 2.4s infinite}
+@keyframes pulseGreen{0%{box-shadow:0 0 0 0 rgba(60,207,110,.55)}70%{box-shadow:0 0 0 7px rgba(60,207,110,0)}100%{box-shadow:0 0 0 0 rgba(60,207,110,0)}}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,240,235,.5)}70%{box-shadow:0 0 0 8px rgba(242,240,235,0)}100%{box-shadow:0 0 0 0 rgba(242,240,235,0)}}
 .welcome__btn{width:100%;height:44px;border-radius:999px;background:var(--paper);color:var(--ink);transition:transform var(--t-fast) var(--ease)}
 .welcome__btn:active{transform:scale(.97)}
@@ -764,7 +767,7 @@ function priceHTML(p){
 }
 function thumbHTML(it){
   return it.img
-    ? `<img src="${esc(it.img)}" alt="" loading="lazy" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">`
+    ? `<img src="${esc(still(it.img))}" alt="" loading="lazy" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">`
     : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`;
 }
 
@@ -788,7 +791,7 @@ function render(menu){
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
       if (it.feature) {
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${(sec.banner || itx.img) ? `<img class="feature__img" src="${esc(sec.banner || itx.img)}" data-fb="${esc(itx.fb)}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+          ${(sec.banner || itx.img) ? `<img class="feature__img" src="${esc(still(sec.banner || itx.img))}" data-fb="${esc(itx.fb)}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
             <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
             <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
           <p class="feature__label">Фирменная позиция</p>
@@ -953,17 +956,27 @@ catBg.addEventListener("click", uiClose);
 /* --- карточка позиции --- */
 const sheet = $("#sheet"), sheetBg = $("#sheetBg");
 /* фото в карточке позиции; у вкуса — своё фото, а если его нет — фото раздела (не фото соседнего вкуса) */
+/* видео вкуса: в колонке «Фото» имя .mp4/.webm; рядом должна лежать картинка с тем же именем .jpg */
+const isVid = s => /\.(mp4|webm)(\?.*)?$/i.test(s || "");
+const still = s => isVid(s) ? s.replace(/\.(mp4|webm)(\?.*)?$/i, ".jpg") : (s || "");
 function sheetPhoto(it, vi){
   const v = it.variants ? it.variants[vi] : null;
   return v ? (v.img || it.secImg || "") : (it.img || "");
 }
 function setSheetImg(it, vi, animate){
   const box = $("#sheetImg"), src = sheetPhoto(it, vi);
-  const old = [...box.querySelectorAll("img,.ph")];
+  const old = [...box.querySelectorAll("img,video,.ph")];
   if (animate && old.length === 1 && old[0].getAttribute("src") === src) return;     /* то же фото — ничего не меняем */
-  box.insertAdjacentHTML("beforeend", src
-    ? `<img src="${esc(src)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}"${animate ? ' class="swap-in"' : ""}>`
-    : `<span class="ph${animate ? " swap-in" : ""}" aria-hidden="true">${initials(it.name)}</span>`);
+  const sw = animate ? ' class="swap-in"' : "";
+  box.insertAdjacentHTML("beforeend", !src
+    ? `<span class="ph${animate ? " swap-in" : ""}" aria-hidden="true">${initials(it.name)}</span>`
+    : isVid(src)   /* видео: без звука, по кругу; пока грузится — картинка с тем же именем (.jpg) */
+    ? `<video src="${esc(src)}" poster="${esc(still(src))}" autoplay muted loop playsinline preload="auto" aria-label="${esc(it.name)}"${sw}></video>`
+    : `<img src="${esc(src)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}"${sw}>`);
+  const vid = box.lastElementChild;
+  if (vid.tagName === "VIDEO") vid.addEventListener("error", () => {           /* видео не загрузилось → показываем картинку */
+    vid.insertAdjacentHTML("afterend", `<img src="${esc(still(src))}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">`); vid.remove();
+  }, { once: true });
   if (!animate) old.forEach(n => n.remove());
   else setTimeout(() => old.forEach(n => n.remove()), 450);                             /* старое уходит, когда новое проявилось */
 }
@@ -980,6 +993,7 @@ function openSheet(it){
   if (!anyTopOpen()) pushLayer();
   closeAll(true);
   sheet.classList.add("open"); sheetBg.classList.add("open"); syncLock();
+  sheet.querySelectorAll("video").forEach(v => v.play().catch(() => {}));
   requestAnimationFrame(() => hintItem());
   $("#sheetClose").focus({ preventScroll: true });
 }
@@ -996,7 +1010,7 @@ function openInfo(part){
   info.querySelector("[data-close]").focus({ preventScroll: true });
   requestAnimationFrame(() => hintInfo());
 }
-function closeAll(keepBg){ [sheet, info, cartEl].forEach(n => n.classList.remove("open")); if (!keepBg) sheetBg.classList.remove("open"); syncLock(); }
+function closeAll(keepBg){ [sheet, info, cartEl].forEach(n => n.classList.remove("open")); sheet.querySelectorAll("video").forEach(v => v.pause()); if (!keepBg) sheetBg.classList.remove("open"); syncLock(); }
 sheetBg.addEventListener("click", uiClose);
 $("#sheetClose").addEventListener("click", uiClose);
 document.addEventListener("keydown", e => {
