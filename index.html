@@ -129,6 +129,7 @@ a{color:inherit}
 .feature{border:1px solid var(--paper);border-radius:var(--r-lg);padding:var(--pad);min-height:calc(2 * var(--col) + var(--gap));position:relative;overflow:hidden;width:100%;text-align:left;
   transition:transform var(--t-fast) var(--ease);animation:rise .8s var(--ease) backwards;display:block}
 .feature{cursor:pointer}
+.list .feature + .feature{margin-top:var(--gap)}
 .feature:active:not(:has(.ctl :active)){transform:scale(.98)}
 .feature__smoke{position:absolute;right:-30px;top:-40px;width:200px;height:200px;pointer-events:none;opacity:.55}
 .feature__smoke circle{fill:none;stroke:var(--paper);stroke-width:1}
@@ -774,14 +775,16 @@ function render(menu){
       const vols = split(it.vol), prices = split(it.price);
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
       if (it.feature) {
+        const allP = (it.variants ? it.variants.flatMap(v => split(v.price)) : prices).map(x => parseFloat(String(x).replace(/\s/g, ""))).filter(n => !isNaN(n));
+        const fPrice = allP.length ? `${new Set(allP).size > 1 ? "от " : ""}${priceHTML(String(Math.min(...allP)))}` : priceHTML(prices[0]);
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${sec.banner ? `<img class="feature__img" src="${esc(still(sec.banner))}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+          ${it.banner ? `<img class="feature__img" src="${esc(still(it.banner))}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
             <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
             <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
           <p class="feature__label">Фирменная позиция</p>
           <p class="feature__name">${esc(it.name)}</p>
-          <div class="feature__row"><span class="feature__price">${priceHTML(prices[0])}</span>
-          <span class="feature__time">Готовится 15–20 минут</span></div>
+          <div class="feature__row"><span class="feature__price">${fPrice}</span>
+          ${/кальян/i.test(sec.title) ? `<span class="feature__time">Готовится 15–20 минут</span>` : ""}</div>
           ${orderable(it) ? `<span class="ctl ctl--feature" data-ctl="${idx}"></span>` : ""}</div>`;
         return;
       }
@@ -1163,7 +1166,7 @@ function buildMenu(menuRows, secRows){
   secRows.forEach(s => {
     const t = pick(s, "раздел"); if (!t) return;
     order.push(t);
-    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banner: photoURL(pick(s, "баннер"), "img/banners/"), note: pick(s, "пометка") });
+    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banners: pick(s, "баннер").split(/[,;\n]+/).map(x => photoURL(x, "img/banners/")).filter(Boolean),   /* несколько баннеров — через запятую, по порядку позиций */ note: pick(s, "пометка") });
   });
   const map = new Map();
   let lastCat = "", lastName = "";
@@ -1198,9 +1201,11 @@ function buildMenu(menuRows, secRows){
   return titles.map((t, i) => {
     const old = MENU.find(s => s.title === t) || {}, info = secInfo.get(t) || {};
     const items = map.get(t);
-    if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;
+    const bn = info.banners || [];
+    if (bn.length) items.slice(0, bn.length).forEach((it, k) => { it.feature = true; it.banner = bn[k]; });   /* сколько баннеров в «Разделах» — столько первых позиций показываем баннерами */
+    else if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
-      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "", banner: info.banner || "" };
+      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "" };
   });
 }
 const MENU_CACHE = "incognito-menu-cache-v1";
