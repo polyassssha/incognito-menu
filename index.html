@@ -1123,6 +1123,7 @@ function parseCSV(text){
 }
 /* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка, путь (img/…) или имя файла.
    Имя файла: позиции — в папке img/items, разделы — в img/categories */
+const ASSET_V = "2611192019";   /* при сборке для GitHub заменяется на дату и время сборки */
 function photoURL(v, dir = "img/items/"){
   v = String(v || "").trim(); if (!v) return "";
   const d = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/) || v.match(/^([\w-]{25,})$/);
@@ -1130,7 +1131,7 @@ function photoURL(v, dir = "img/items/"){
   if (/^(https?:|data:)/.test(v)) return v;
   v = v.replace(/^\/+/, "");
   if (!/\.\w{2,5}$/.test(v)) v += ".jpg";                       /* имя без расширения — считаем, что это .jpg */
-  return v.includes("/") ? v : dir + v;
+  return (v.includes("/") ? v : dir + v) + "?v=" + ASSET_V;      /* метка версии: после новой загрузки телефон берёт свежие картинки, а не старые из памяти */
 }
 /* CSV → массив объектов по названиям колонок (порядок колонок в таблице не важен) */
 function table(text){
