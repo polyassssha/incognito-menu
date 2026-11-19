@@ -1166,7 +1166,10 @@ function buildMenu(menuRows, secRows){
   secRows.forEach(s => {
     const t = pick(s, "раздел"); if (!t) return;
     order.push(t);
-    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banners: pick(s, "баннер").split(/[,;\n]+/).map(x => photoURL(x, "img/banners/")).filter(Boolean),   /* несколько баннеров — через запятую, по порядку позиций */ note: pick(s, "пометка") });
+    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banners: pick(s, "баннер").split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).map(x => {   /* «Позиция: файл» через запятую — в этом порядке и идут баннеры */
+      const m = x.match(/^(.+?)\s*[:=—–]\s*([^:=]+)$/);
+      return m ? { name: m[1].trim().toLowerCase(), img: photoURL(m[2], "img/banners/") } : { name: "", img: photoURL(x, "img/banners/") };
+    }), note: pick(s, "пометка") });
   });
   const map = new Map();
   let lastCat = "", lastName = "";
@@ -1201,8 +1204,12 @@ function buildMenu(menuRows, secRows){
   return titles.map((t, i) => {
     const old = MENU.find(s => s.title === t) || {}, info = secInfo.get(t) || {};
     const items = map.get(t);
-    const bn = info.banners || [];
-    if (bn.length) items.slice(0, bn.length).forEach((it, k) => { it.feature = true; it.banner = bn[k]; });   /* сколько баннеров в «Разделах» — столько первых позиций показываем баннерами */
+    const bn = info.banners || [], feats = [];
+    bn.forEach(b => {                          /* баннер с названием — к этой позиции; без названия — к следующей по порядку позиции без баннера */
+      const it = b.name ? items.find(x => !x.feature && x.name.trim().toLowerCase() === b.name) : items.find(x => !x.feature);
+      if (it) { it.feature = true; it.banner = b.img; feats.push(it); }
+    });
+    if (feats.length) items.splice(0, items.length, ...feats, ...items.filter(x => !x.feature));   /* баннеры — сверху, в порядке из таблицы */
     else if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
       tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "" };
