@@ -847,7 +847,18 @@ function renderCats(menu){
       ${mp ? `<em>от ${fmt(mp)} ₽</em>` : ""}</span>
     </button>`;
   }).join("");
+  requestAnimationFrame(fitCatImgs);
 }
+/* квадратная карточка: центр фото — посередине свободного места над текстом (одна строка названия или две — неважно) */
+function fitCatImgs(){
+  document.querySelectorAll(".cat:not(.cat--tall):not(.cat--wide) .cat__img").forEach(im => {
+    const card = im.closest(".cat"), txt = card.querySelector(".cat__txt");
+    const free = txt.offsetTop - 8, w = card.clientWidth;
+    im.style.top = Math.min(0, Math.round(free / 2 - w / 2)) + "px";
+  });
+}
+addEventListener("resize", () => requestAnimationFrame(fitCatImgs));
+document.fonts?.ready.then(() => requestAnimationFrame(fitCatImgs));
 
 /* --- переход по чипам и кнопкам --- */
 document.addEventListener("click", e => {
