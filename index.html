@@ -722,8 +722,13 @@ const MENU = [
   ]},
 ];
 
-/* Часы: 0 — воскресенье. Закрытие после полуночи. */
-const HOURS = { 0:[20,1], 1:[20,1], 2:[20,1], 3:[20,1], 4:[20,1], 5:[20,2], 6:[20,2] };
+/* Часы по умолчанию (если вкладка «График» недоступна). 0 — воскресенье. Время в минутах от полуночи;
+   закрытие раньше открытия — значит после полуночи. off — выходной. */
+const H = (o, c) => ({ open: o * 60, close: c * 60, off: false });
+let HOURS = { 0:H(20,1), 1:H(20,1), 2:H(20,1), 3:H(20,1), 4:H(20,1), 5:H(20,2), 6:H(20,2) };
+const BAR_TZ = "Asia/Yekaterinburg";   /* Бузулук, UTC+5: статус «открыто/закрыто» считаем по времени бара, а не телефона */
+const HOURS_SHEET = "График";           /* вкладка таблицы: День | Открытие | Закрытие | Выходной */
+const HOURS_CACHE = "incognito-hours-v1";
 
 const RULES = [
   { t:"Бронирование и посадка", li:[
@@ -1089,25 +1094,67 @@ document.addEventListener("keydown", e => {
 });
 
 /* --- часы и статус --- */
+const DAY_NAMES = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+const DAY_ACC = ["в воскресенье","в понедельник","во вторник","в среду","в четверг","в пятницу","в субботу"];
+const hm = m => { m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+/* время бара: день недели и минуты от полуночи */
+function barNow(){
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: BAR_TZ, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+      .formatToParts(new Date()).map(x => [x.type, x.value]));
+    return { d: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(p.weekday), t: (+p.hour % 24) * 60 + +p.minute };
+  } catch (e) { const n = new Date(); return { d: n.getDay(), t: n.getHours() * 60 + n.getMinutes() }; }
+}
+const overnight = h => h.close <= h.open;                         /* смена переходит через полночь */
 function renderHours(){
-  const names = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
-  const now = new Date(), d = now.getDay(), h = now.getHours() + now.getMinutes()/60;
-  const pad = n => String(n).padStart(2,"0") + ":00";
-  const prev = (d + 6) % 7;
-  const sd = h < HOURS[prev][1] ? prev : d;   /* после полуночи «сегодня» — это ещё вчерашняя смена */
+  const { d, t } = barNow(), prev = (d + 6) % 7, P = HOURS[prev], T = HOURS[d];
+  const fromYesterday = !P.off && overnight(P) && t < P.close;     /* после полуночи ещё идёт вчерашняя смена */
+  const openToday = !T.off && t >= T.open && (overnight(T) || t < T.close);
+  const open = fromYesterday || openToday;
+  const sd = fromYesterday ? prev : d;                              /* «сегодня» для гостя — это текущая смена */
   $("#hours").innerHTML = [1,2,3,4,5,6,0].map(i => {
-    const cls = i === sd ? "today" : "dim";
-    return `<div class="${cls}">${names[i]}${i === sd ? " · сегодня" : ""}</div><div class="${cls}">${pad(HOURS[i][0])}–${pad(HOURS[i][1])}</div>`;
+    const cls = i === sd ? "today" : "dim", h = HOURS[i];
+    return `<div class="${cls}">${DAY_NAMES[i]}${i === sd ? " · сегодня" : ""}</div><div class="${cls}">${h.off ? "выходной" : `${hm(h.open)}–${hm(h.close)}`}</div>`;
   }).join("");
-  const openToday = h >= HOURS[d][0];
-  const openFromYesterday = h < HOURS[prev][1];
-  const open = openToday || openFromYesterday;
-  const until = openFromYesterday ? HOURS[prev][1] : HOURS[d][1];
-  /* для приветствия: смена, которая идёт сейчас (после полуночи — вчерашняя), иначе сегодняшняя */
-  const sess = openFromYesterday ? HOURS[prev] : HOURS[d];
-  $("#wToday").textContent = `Сегодня ${pad(sess[0])}–${pad(sess[1])}`;
+  const S = HOURS[sd];
+  $("#wToday").textContent = S.off ? "Сегодня выходной" : `Сегодня ${hm(S.open)}–${hm(S.close)}`;
   $("#wStatus").classList.toggle("open", open);
-  $("#wStatusText").textContent = open ? `Сейчас открыто до ${pad(until)}` : `Откроемся в ${pad(HOURS[d][0])}`;
+  let txt;
+  if (open) txt = `Сейчас открыто до ${hm(fromYesterday ? P.close : T.close)}`;
+  else if (!T.off && t < T.open) txt = `Откроемся в ${hm(T.open)}`;
+  else {                                                             /* ищем ближайший рабочий день */
+    txt = "Сейчас закрыто";
+    for (let k = 1; k <= 7; k++) { const i = (d + k) % 7; if (!HOURS[i].off) { txt = `Откроемся ${k === 1 ? "завтра" : DAY_ACC[i]} в ${hm(HOURS[i].open)}`; break; } }
+  }
+  $("#wStatusText").textContent = txt;
+}
+/* график из вкладки «График»: День | Открытие | Закрытие | Выходной (да/нет). Время — 20:00, 01:00 */
+function parseHours(rows){
+  const keys = [["вс","вос"],["пн","пон"],["вт","вто"],["ср","сре"],["чт","чет"],["пт","пят"],["сб","суб"]];
+  const tm = v => { const m = String(v || "").match(/(\d{1,2})[:.](\d{2})/) || String(v || "").match(/^\s*(\d{1,2})\s*$/); return m ? (+m[1] % 24) * 60 + (+(m[2] || 0)) : null; };
+  const out = {};
+  rows.forEach(r => {
+    const day = String(pick(r, "день", "дни") || "").trim().toLowerCase();
+    const i = keys.findIndex(k => k.some(x => day.startsWith(x))); if (i < 0) return;
+    const o = tm(pick(r, "открытие", "открываемся", "с")), c = tm(pick(r, "закрытие", "закрываемся", "до"));
+    const offTxt = String(pick(r, "выходной") || "").trim().toLowerCase();
+    const off = /^(да|true|истина|x|х|✓|выходной|1)$/.test(offTxt) || /выходн/.test(String(pick(r, "открытие") || "").toLowerCase());
+    if (off) out[i] = { open: 0, close: 0, off: true };
+    else if (o != null && c != null) out[i] = { open: o, close: c, off: false };
+  });
+  return out;
+}
+async function loadHours(){
+  try { const c = JSON.parse(localStorage.getItem(HOURS_CACHE)); if (c && typeof c === "object") { Object.assign(HOURS, c); renderHours(); } } catch (e) {}
+  if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(HOURS_SHEET)}`;
+    const r = await fetch(url, { cache: "no-store" }); if (!r.ok) return;
+    const h = parseHours(table(await r.text()));
+    if (Object.keys(h).length < 7) return;                          /* вкладки нет или заполнена не вся неделя — оставляем как было */
+    Object.assign(HOURS, h); renderHours();
+    try { localStorage.setItem(HOURS_CACHE, JSON.stringify(h)); } catch (e) {}
+  } catch (e) {}
 }
 
 function renderRules(){
@@ -1142,7 +1189,7 @@ function parseCSV(text){
 }
 /* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка, путь (img/…) или имя файла.
    Имя файла: позиции — в папке img/items, разделы — в img/categories */
-const ASSET_V = "2611201911" + "." + Math.floor(Date.now() / 60000);   /* метка для картинок: меняется каждую минуту при открытии сайта — замена файла на GitHub видна сразу, без нового index.html */
+const ASSET_V = "2611201925" + "." + Math.floor(Date.now() / 60000);   /* метка для картинок: меняется каждую минуту при открытии сайта — замена файла на GitHub видна сразу, без нового index.html */
 function photoURL(v, dir = "img/items/"){
   v = String(v || "").trim(); if (!v) return "";
   const d = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/) || v.match(/^([\w-]{25,})$/);
@@ -1678,6 +1725,7 @@ menuLive = !!startMenu;
 render(startMenu || MENU);
 paintBar();
 renderHours();
+loadHours();
 renderRules();
 maybeWelcome();
 if (ADDRESS) $("#footAddr").textContent = ADDRESS;
