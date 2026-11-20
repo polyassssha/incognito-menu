@@ -176,6 +176,7 @@ a{color:inherit}
 @keyframes barpop{0%{transform:scale(1)}40%{transform:scale(1.02)}100%{transform:scale(1)}}
 
 /* нижний ряд: «Позвать официанта» + «Мой заказ», раскладка — флексом, без ручных сдвигов */
+.view-only .dock{display:none}
 .dock{position:fixed;z-index:45;left:50%;bottom:calc(var(--pad) + env(safe-area-inset-bottom));transform:translateX(-50%);
   width:min(100vw, 480px);padding:0 var(--pad);display:flex;align-items:center;gap:8px;pointer-events:none}
 .dock > *{pointer-events:auto}
@@ -642,7 +643,16 @@ const sheetURL = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/expo
 const ADDRESS = "г. Бузулук, ул. Ново-Чапаевская, 11В";
 /* адрес скрипта Google, который пересылает заказы в Telegram. Пусто — заказ и вызов официанта выключены, список работает как памятка */
 const ORDER_URL = "https://script.google.com/macros/s/AKfycbzvhy1uNBUQPtJq5VSH4ggMZEZIqS3W5B1D1AiKKdsZR6DGfy7ALiALCiSX0oDBX5pc/exec";
-const ORDERING = !!ORDER_URL;
+/* Меню для просмотра: обычная ссылка без номера стола (или с ?view) — без корзины, заказа и вызова официанта.
+   Заказывать можно только по QR-коду стола (?table=N). */
+const VIEW_ONLY = (() => {
+  const q = new URLSearchParams(location.search);
+  if (q.has("view") || q.has("просмотр")) return true;
+  const t = parseInt(q.get("table") || q.get("t") || q.get("стол"), 10);
+  if (t >= 1 && t <= 99) return false;
+  try { const v = parseInt(sessionStorage.getItem("incognito-table"), 10); return !(v >= 1 && v <= 99); } catch (e) { return true; }
+})();
+const ORDERING = !!ORDER_URL && !VIEW_ONLY;
 
 /* Фото берутся только из таблицы (колонки «Фото» и «Баннер») по имени файла из папок на GitHub — в коде картинок нет */
 
@@ -742,6 +752,7 @@ const split = s => String(s ?? "").split("|").map(x => x.trim());
 const initials = n => n.replace(/[^A-Za-zА-Яа-яЁё ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 
 /* бесплатное (цена 0, например настольные игры) — просто информация, в заказ не добавляется */
+function canAdd(it){ return !VIEW_ONLY && orderable(it); }   /* в режиме просмотра кнопок добавления нет */
 function orderable(it){ return !!it.variants || !split(it.price).length || split(it.price).some(p => parseFloat(String(p).replace(/\s/g, "")) !== 0); }
 function priceHTML(p){
   if (p === "" || p == null) return null;
@@ -785,7 +796,7 @@ function render(menu){
           <p class="feature__name">${esc(it.name)}</p>
           <div class="feature__row"><span class="feature__price">${fPrice}</span>
           ${/кальян/i.test(sec.title) ? `<span class="feature__time">Готовится 15–20 минут</span>` : ""}</div>
-          ${orderable(it) ? `<span class="ctl ctl--feature" data-ctl="${idx}"></span>` : ""}</div>`;
+          ${canAdd(it) ? `<span class="ctl ctl--feature" data-ctl="${idx}"></span>` : ""}</div>`;
         return;
       }
       let priceCell;
@@ -803,7 +814,7 @@ function render(menu){
       html += `<div class="item" role="button" tabindex="0" data-i="${idx}" ${delay}>
         <span class="thumb">${thumbHTML(itx)}</span>
         <span><span class="item__name">${esc(it.name)}</span>${it.desc ? `<span class="item__desc" style="display:block">${esc(it.desc)}</span>` : ""}</span>
-        <span class="item__right">${priceCell}${orderable(it) ? `<span class="ctl" data-ctl="${idx}"></span>` : ""}</span></div>`;
+        <span class="item__right">${priceCell}${canAdd(it) ? `<span class="ctl" data-ctl="${idx}"></span>` : ""}</span></div>`;
     });
     html += `</div>`;
     if (sec.tips?.length) html += `<div class="tips" style="animation-delay:${120 + Math.min(sec.items.length,8)*50 + 120}ms"><p class="tips__title">${esc(sec.tipsTitle || "Советы")}</p><ol>${
@@ -841,7 +852,10 @@ function renderCats(menu){
     const letter = esc((s.title.trim()[0] || "").toUpperCase());
     return `<button class="cat${cls}" type="button" data-cat="${s.id}" style="animation-delay:${250 + i*70}ms">
       <span class="cat__count">${s.items.length}</span>
-      ${img ? `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}">` : `<span class="cat__ph" aria-hidden="true">${letter}</span>`}
+      ${!img ? `<span class="cat__ph" aria-hidden="true">${letter}</span>`
+        : isVid(img)   /* живая карточка: видео без звука по кругу, до загрузки — картинка с тем же именем .jpg */
+        ? `<video class="cat__img" src="${esc(img)}" poster="${esc(still(img))}" autoplay muted loop playsinline preload="${i < 3 ? "auto" : "metadata"}" aria-hidden="true"></video>`
+        : `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}">`}
       <canvas class="fx" aria-hidden="true"></canvas>
       <span class="cat__txt"><b>${esc(s.title)}</b>${(s.desc || CAT_DESC[s.title]) ? `<small>${esc(s.desc || CAT_DESC[s.title])}</small>` : ""}
       ${mp ? `<em>от ${fmt(mp)} ₽</em>` : ""}</span>
@@ -850,6 +864,11 @@ function renderCats(menu){
   requestAnimationFrame(fitCatImgs);
 }
 /* квадратная карточка: центр фото — посередине свободного места над текстом (одна строка названия или две — неважно) */
+/* видео карточки не загрузилось — оставляем картинку */
+document.addEventListener("error", e => {
+  const v = e.target; if (!(v instanceof HTMLVideoElement) || !v.classList.contains("cat__img")) return;
+  const im = document.createElement("img"); im.className = "cat__img"; im.alt = ""; im.src = v.poster; im.style.top = v.style.top; v.replaceWith(im);
+}, true);
 function fitCatImgs(){
   document.querySelectorAll(".cat:not(.cat--tall):not(.cat--wide) .cat__img").forEach(im => {
     const card = im.closest(".cat"), txt = card.querySelector(".cat__txt");
@@ -956,7 +975,7 @@ const sheet = $("#sheet"), sheetBg = $("#sheetBg");
 /* фото в карточке позиции; у вкуса — своё фото, а если его нет — фото раздела (не фото соседнего вкуса) */
 /* видео вкуса: в колонке «Фото» имя .mp4/.webm; рядом должна лежать картинка с тем же именем .jpg */
 const isVid = s => /\.(mp4|webm)(\?.*)?$/i.test(s || "");
-const still = s => isVid(s) ? s.replace(/\.(mp4|webm)(\?.*)?$/i, ".jpg") : (s || "");
+const still = s => isVid(s) ? s.replace(/\.(mp4|webm)(\?.*)?$/i, ".jpg$2") : (s || "");
 function sheetPhoto(it, vi){
   const v = it.variants ? it.variants[vi] : null;
   return v ? (v.img || it.secImg || "") : (it.img || "");
@@ -1123,7 +1142,7 @@ function parseCSV(text){
 }
 /* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка, путь (img/…) или имя файла.
    Имя файла: позиции — в папке img/items, разделы — в img/categories */
-const ASSET_V = "2611192036" + "." + Math.floor(Date.now() / 60000);   /* метка для картинок: меняется каждую минуту при открытии сайта — замена файла на GitHub видна сразу, без нового index.html */
+const ASSET_V = "2611201911" + "." + Math.floor(Date.now() / 60000);   /* метка для картинок: меняется каждую минуту при открытии сайта — замена файла на GitHub видна сразу, без нового index.html */
 function photoURL(v, dir = "img/items/"){
   v = String(v || "").trim(); if (!v) return "";
   const d = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/) || v.match(/^([\w-]{25,})$/);
@@ -1343,7 +1362,7 @@ function paintSheetOpts(){
   if (!orderable(it)) { $("#sheetOpts").innerHTML = `<div><span class="opt__l">Цена<em>бесплатно</em></span></div>`; return; }
   $("#sheetOpts").innerHTML = prices.map((p, i) => {
     const k = o.key(i), row = cart.find(r => r.k === k);
-    const ctrl = row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">Добавить</button>`;
+    const ctrl = VIEW_ONLY ? "" : row ? stepper(k, row.q) : `<button type="button" class="opt-add" data-optadd="${i}">Добавить</button>`;
     return `<div><span class="opt__l">${esc(vols[i] || "Цена")}<em>${priceHTML(p) || "уточняйте у персонала"}</em></span>${ctrl}</div>`;
   }).join("");
 }
@@ -1483,6 +1502,10 @@ async function callWaiter(){
 }
 $("#callBtn").addEventListener("click", callWaiter);
 
+if (VIEW_ONLY) {
+  document.body.classList.add("view-only");
+  $("#wText").textContent = "Здесь всё наше меню. Заказать можно у официанта или через QR-код на вашем столе. Оставайтесь инкогнито.";
+}
 if (ORDERING) {
   document.body.classList.add("ordering");
   $("#callBtn").hidden = false;
