@@ -794,7 +794,7 @@ function render(menu){
         const allP = (it.variants ? it.variants.flatMap(v => split(v.price)) : prices).map(x => parseFloat(String(x).replace(/\s/g, ""))).filter(n => !isNaN(n));
         const fPrice = allP.length ? `${new Set(allP).size > 1 ? "от " : ""}${priceHTML(String(Math.min(...allP)))}` : priceHTML(prices[0]);
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${it.banner ? `<img class="feature__img" src="${esc(still(it.banner))}" alt="">` : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
+          ${it.banner ? (isVid(it.banner) ? `<video class="feature__img" src="${esc(it.banner)}" poster="${esc(still(it.banner))}" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>` : `<img class="feature__img" src="${esc(still(it.banner))}" alt="">`) : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
             <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
             <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
           <p class="feature__label">Фирменная позиция</p>
