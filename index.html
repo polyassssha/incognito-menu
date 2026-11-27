@@ -78,7 +78,7 @@ a{color:inherit}
 .cat--tall{grid-row:span 2}
 /* Safari на iPhone не обрезает анимированное содержимое по border-radius — режем явно */
 .cat,.feature{clip-path:inset(0 round var(--r-lg));-webkit-mask-image:-webkit-radial-gradient(white,black)}
-.cat__img,.cat .fx,.cat:has(.cat__img)::after,.feature__img,.feature:has(.feature__img)::after{border-radius:calc(var(--r-lg) - 1px)}
+.cat__img,.cat:has(.cat__img)::after,.feature__img,.feature:has(.feature__img)::after{border-radius:calc(var(--r-lg) - 1px)}
 
 .cat:active{border-color:rgba(242,240,235,.25)}
 /* фото стоит сверху во всю ширину в своих пропорциях (обычная карточка — квадрат, высокая — 1:2),
@@ -92,12 +92,10 @@ a{color:inherit}
 .cat--tall:has(.cat__img)::after{background:linear-gradient(0deg,#000 0,#000 18%,rgba(0,0,0,.7) 24%,rgba(0,0,0,0) 34%)}
 .cat:has(.cat__img) .cat__txt{text-shadow:0 1px 12px rgba(0,0,0,.6)}
 
-.cat__count{position:absolute;top:12px;right:12px;min-width:24px;height:24px;padding:0 8px;border-radius:999px;
+.cat__count{position:absolute;top:12px;right:12px;z-index:1;min-width:24px;height:24px;padding:0 8px;border-radius:999px;
   background:rgba(0,0,0,.55);border:1px solid rgba(242,240,235,.12);display:grid;place-items:center;color:var(--soft)}
-.cat__txt small{text-wrap:balance}
-.cat__txt{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:4px}
-.cat__txt b{text-wrap:balance}
-.cat__txt small{color:var(--mute)}
+.cat__txt{position:absolute;z-index:1;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:4px}
+.cat__txt b,.cat__txt small{text-wrap:balance}
 .cat__txt em{font-style:normal;margin-top:4px}
 
 /* ---------- Разделы ---------- */
@@ -127,15 +125,9 @@ a{color:inherit}
 
 /* карточка «Паровой коктейль» — главная позиция */
 .feature{border:1px solid var(--paper);border-radius:var(--r-lg);padding:var(--pad);min-height:calc(2 * var(--col) + var(--gap));position:relative;overflow:hidden;width:100%;text-align:left;
-  transition:transform var(--t-fast) var(--ease);animation:rise .8s var(--ease) backwards;display:block}
-.feature{cursor:pointer}
+  transition:transform var(--t-fast) var(--ease);animation:rise .8s var(--ease) backwards;display:block;cursor:pointer}
 .list .feature + .feature{margin-top:var(--gap)}
 .feature:active:not(:has(.ctl :active)){transform:scale(.98)}
-.feature__smoke{position:absolute;right:-30px;top:-40px;width:200px;height:200px;pointer-events:none;opacity:.55}
-.feature__smoke circle{fill:none;stroke:var(--paper);stroke-width:1}
-.feature__smoke g{transform-origin:100px 100px;animation:spin 18s linear infinite}
-.feature__smoke g:nth-child(2){animation-duration:26s;animation-direction:reverse}
-@keyframes spin{to{transform:rotate(360deg)}}
 .feature__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:70% 50%;pointer-events:none;
   animation:smokein .9s .2s var(--ease) backwards}
 /* фото на весь баннер; слева затемнение под текст */
@@ -152,7 +144,7 @@ a{color:inherit}
 .tips__title{text-wrap:balance}
 .tips ol{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:16px}
 .tips li{display:grid;grid-template-columns:24px 1fr;gap:var(--gap);animation:rise .8s var(--ease) backwards}
-.tips li span{color:var(--mute);padding-top:2px;font-variant-numeric:tabular-nums}
+.tips li span{padding-top:2px}
 .tips li p{color:var(--soft)}
 
 /* ---------- Список (корзина) ---------- */
@@ -324,9 +316,13 @@ body.ordering .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .sheet-bg.open{opacity:1;pointer-events:auto}
 .sheet__grab{width:40px;height:4px;border-radius:4px;background:#3a3a37;margin:0 auto 16px;box-shadow:0 0 0 12px transparent}
 .sheet__img{aspect-ratio:1/1;max-height:52vh;margin:0 auto;border-radius:var(--r-lg);overflow:hidden;position:relative;background:var(--ink)}
-.sheet__img img,.sheet__img video{display:block;width:100%;height:100%;object-fit:cover}
+.sheet__media{position:absolute;inset:0}
+.sheet__media img,.sheet__media video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 /* смена фото при выборе вкуса: новое проявляется поверх старого */
-.sheet__img .swap-in{position:absolute;inset:0;animation:imgIn .45s var(--ease) both}
+.sheet__img .swap-in{animation:imgIn .45s var(--ease) both}
+/* видео лежит поверх фото и проявляется, только когда реально заиграло; до этого (и если не загрузилось) видно фото */
+video.vid{opacity:0;transition:opacity .6s ease}
+video.vid.on{opacity:1}
 @keyframes imgIn{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
 .sheet__cat{color:var(--mute);margin-top:16px}
 .sheet__name{margin-top:6px}
@@ -356,7 +352,6 @@ body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animat
 .welcome__status i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--paper)}
 .welcome__status.open i{background:#3ccf6e;animation:pulseGreen 2.4s infinite}
 @keyframes pulseGreen{0%{box-shadow:0 0 0 0 rgba(60,207,110,.55)}70%{box-shadow:0 0 0 7px rgba(60,207,110,0)}100%{box-shadow:0 0 0 0 rgba(60,207,110,0)}}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,240,235,.5)}70%{box-shadow:0 0 0 8px rgba(242,240,235,0)}100%{box-shadow:0 0 0 0 rgba(242,240,235,0)}}
 .welcome__btn{width:100%;height:44px;border-radius:999px;background:var(--paper);color:var(--ink);transition:transform var(--t-fast) var(--ease)}
 .welcome__btn:active{transform:scale(.97)}
 @keyframes wFade{from{opacity:0}to{opacity:1}}
@@ -375,12 +370,6 @@ body.welcoming .cat,body.welcoming .logo img,body.welcoming .logo::before{animat
 .cat--wide .cat__img{left:auto;right:0;width:auto;height:100%}
 .cat--wide:has(.cat__img)::after{background:linear-gradient(90deg,#000 0,#000 44%,rgba(0,0,0,.6) 52%,rgba(0,0,0,0) 66%)}
 .cat--wide .cat__count{left:12px;right:auto}
-
-/* ---------- живые карточки ---------- */
-.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;mix-blend-mode:screen}
-.cat__txt,.cat__count{z-index:1}
-.feature .fx{z-index:0}
-@media (prefers-reduced-motion:reduce){.fx{display:none}.cat{transform:none!important}}
 
 /* подсказка, что список листается: нижние пункты растворяются, стрелка — в самой прозрачной зоне */
 .sheet{--fade:44px;--hint:calc(24px + env(safe-area-inset-bottom) + 14px)}
@@ -435,9 +424,9 @@ html.locked{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
    Антиква (как «ИНКОГНИТО» в логотипе): H1, H2.
    Гротеск (как «HOOKAH LOUNGE»): Цена L, Заголовок, Цена, Текст, Кнопка, Подпись, Метка, Счётчик.
    ===================================================================== */
-/* H1 — заголовки шторок и позиций */
+/* H1 — заголовки шторок и позиций (на узких экранах чуть меньше, чтобы длинное слово, например «Дополнительно», не заходило под крестик) */
 .section__title,.sheet__name,.feature__name,.welcome__title{
-  font-family:var(--display);font-weight:600;font-size:28px;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;
+  font-family:var(--display);font-weight:600;font-size:clamp(22px, 7vw, 28px);line-height:1.1;letter-spacing:.06em;text-transform:uppercase;
   font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1}
 /* H2 — названия категорий, подзаголовки блоков (на узких экранах ужимается, чтобы влезло «Дополнительно») */
 .cat__txt b,.tips__title{
@@ -457,7 +446,6 @@ html.locked{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
 /* Текст — описания и правила */
 .sheet__desc,.tips li p,.acc__inner li,.hours div,.cart__empty,.welcome__text{
   font-family:var(--body);font-weight:400;font-size:14px;line-height:1.5}
-.hours div:nth-child(even){font-variant-numeric:tabular-nums}
 /* Кнопка */
 .pill,.opt-add,.cart__clear,.foot__link,.welcome__btn{
   font-family:var(--body);font-weight:400;font-size:13px;line-height:1.2;letter-spacing:.02em}
@@ -654,71 +642,69 @@ const VIEW_ONLY = (() => {
 })();
 const ORDERING = !!ORDER_URL && !VIEW_ONLY;
 
-/* Фото берутся только из таблицы (колонки «Фото» и «Баннер») по имени файла из папок на GitHub — в коде картинок нет */
+/* Фото и видео берутся только из таблицы: в коде нет ни одной картинки меню.
+   Имя файла из таблицы ищется в папке на GitHub:
+     «Меню»    — колонки «Фото» и «Видео»                  → img/items/
+     «Разделы» — колонки «Фото» и «Видео»                  → img/categories/
+     «Разделы» — колонки «Баннер» и «Видео баннера»        → img/banners/
+   Видео показывается поверх фото, только когда реально заиграло. Пока грузится, не загрузилось
+   или грузится дольше VIDEO_WAIT — гость видит фото. */
+const VIDEO_WAIT = 8000;
 
-
-/* Фото: путь к файлу рядом с сайтом, например "img/mohito.jpg". Пока пусто — показывается заглушка. */
+/* Запасное меню (только текст, без фото) — на случай, если таблица недоступна при самом первом открытии.
+   Здесь же советы «Как курить, чтобы кальян не горчил» (поле tips у раздела «Кальян»). */
 const MENU = [
-  { id:"hookah", title:"Кальян", tipsTitle:"Как курить, чтобы кальян не горчил", tips:[
+  {"id": "hookah", "title": "Кальян", "desc": "Паровой коктейль на ваш вкус", "tipsTitle": "Как курить, чтобы кальян не горчил", "tips": [
     "Вдыхайте дым и сразу выдыхайте, не задерживая. Кальян курится «не в затяг»: так лучше раскрывается вкус и не кружится голова.",
     "Каждые 1–2 затяжки делайте паузу и продувайте кальян: выдохните воздух в шланг, не вдыхая дым. Это сбивает лишний жар.",
     "Тяните медленно и плавно, не раскуривайте слишком интенсивно.",
     "Почувствовали горечь или жжение — сразу скажите кальянщику."
-  ], items:[
-    { name:"Паровой коктейль", price:"1100", img:"", feature:true,
-      about:"Кальян с миксом вкусов на ваш выбор, кальянщик поможет подобрать. Готовится 15–20 минут. Если кальян горчит, плохо тянется или забит неправильно, скажите в течение 10 минут после подачи, и мы заменим его на аналогичный." },
+  ], "items": [
+    {"name": "Паровой коктейль премиум", "desc": "В основе — сигарный лист вместо обычного табака.", "about": "В основе — сигарный лист вместо обычного табака. Это как классический кальян, только благороднее и выразительнее: более глубокий вкус, насыщенный аромат и плотный дым. Без сложных терминов — просто попробуйте, если любите яркие впечатления.", "price": "1500", "feature": true},
+    {"name": "Паровой коктейль", "desc": "Кальян с миксом вкусов на ваш выбор, кальянщик поможет подобрать.", "about": "Кальян с миксом вкусов на ваш выбор, кальянщик поможет подобрать. Готовится 15–20 минут. Если кальян горчит, плохо тянется или забит неправильно, скажите в течение 10 минут после подачи, и мы заменим его на аналогичный.", "price": "1100", "feature": true},
+    {"name": "Паровой коктейль на фруктах", "desc": "На грейпфруте, На гранате, На ананасе", "variants": [{"name": "На грейпфруте", "about": "", "vol": "", "price": "1850"}, {"name": "На гранате", "about": "", "vol": "", "price": "2000"}, {"name": "На ананасе", "about": "", "vol": "", "price": "2500"}], "feature": true},
   ]},
-  { id:"hot", title:"Горячие напитки", items:[
-    { name:"Чай", desc:"Вкусы — уточняйте у персонала", vol:"1 л|2 л", price:"250|400", img:"",
-      about:"Чай в чайнике на 1 или 2 литра, на всю компанию. Вкусы уточняйте у персонала." },
-    { name:"Американо", price:"170", img:"", about:"Эспрессо с горячей водой. Классический чёрный кофе." },
-    { name:"Капучино", price:"210", img:"", about:"Эспрессо с молоком и плотной молочной пеной." },
-    { name:"Латте", price:"210", img:"", about:"Эспрессо с большим количеством молока и лёгкой пенкой. Самый мягкий кофе в меню." },
+  {"id": "hot", "title": "Горячие напитки", "desc": "Чай в чайниках и кофе", "items": [
+    {"name": "Чёрный чай", "desc": "Классический, Черёмуховый, Мёд с дыней, Саусеп Манго, Шоколадный кедр, С чабрецом", "variants": [{"name": "Классический", "about": "Чёрный чай классической выделки, без добавок", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Черёмуховый", "about": "Чёрный чай с черёмухой, малиной, брусникой и смородиной.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Мёд с дыней", "about": "Классический чай с кусочками дыни, яблока и календулой.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Саусеп Манго", "about": "Чёрный чай с гуавой, маракуей и экзотическим ароматом манго.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Шоколадный кедр", "about": "Чёрный чай с шоколадом, кедровым орехом и кэробом.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "С чабрецом", "about": "Чёрный чай с добавлением душистого чабреца.", "vol": "1 л|2 л", "price": "250|400"}]},
+    {"name": "Улун (Зелёный чай)", "desc": "Молочный улун Най Сян, Манговый улун, Молочный улун с клубникой", "variants": [{"name": "Молочный улун Най Сян", "about": "Классический улун с нежным сливочным вкусом и ароматом.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Манговый улун", "about": "Улун с цукатами и ярким тропическим ароматом манго.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Молочный улун с клубникой", "about": "Улун с сушеной клубникой и молочным ароматом.", "vol": "1 л|2 л", "price": "250|400"}]},
+    {"name": "Каркаде фруктово-ягодный", "desc": "Малина с мятой, «Для двоих», Сангрия, Глинтвейн", "variants": [{"name": "Малина с мятой", "about": "Каркаде с яблоком, малиной, смородиной и освежающими травами (чабрец, ромашка, мята).", "vol": "1 л|2 л", "price": "250|400"}, {"name": "«Для двоих»", "about": "Ягодный микс на основе каркаде с клубникой, вишней, персиком и левзеей.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Сангрия", "about": "Каркаде с цукатами, ягодами (арония, шиповник), яблоком, апельсином и пряностями (корица, гвоздика)", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Глинтвейн", "about": "Пряный каркаде с фруктами и специями (согревающий зимний микс).", "vol": "1 л|2 л", "price": "250|400"}]},
+    {"name": "Травяные сборы", "desc": "Утро в хвойном бору, Вечерний чай, Цветущий луг", "variants": [{"name": "Утро в хвойном бору", "about": "Бодрящий сбор с хвоей пихты, баданом, тимьяном и лавандой.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Вечерний чай", "about": "Успокаивающий сбор с мятой, мелиссой, иван-чаем, родиолой и корицей.", "vol": "1 л|2 л", "price": "250|400"}, {"name": "Цветущий луг", "about": "Луговой сбор с душицей, чабрецом, зверобоем и листьями лесных ягод.", "vol": "1 л|2 л", "price": "250|400"}]},
+    {"name": "Кофе", "desc": "Американо, Капучино, Латте", "variants": [{"name": "Американо", "about": "Эспрессо с горячей водой. Классический чёрный кофе.", "vol": "", "price": "170"}, {"name": "Капучино", "about": "Эспрессо с молоком и плотной молочной пеной.", "vol": "", "price": "210"}, {"name": "Латте", "about": "Эспрессо с большим количеством молока и лёгкой пенкой. Самый мягкий кофе в меню.", "vol": "", "price": "210"}]},
   ]},
-  { id:"cold", title:"Холодные напитки", items:[
-    { name:"Лимонад яблоко-киви", desc:"Авторский", vol:"1 л", price:"650", img:"", about:"Авторский лимонад с яблоком и киви: свежий, кисло-сладкий. Литр на компанию." },
-    { name:"Лимонад манго-маракуйя", desc:"Авторский", vol:"1 л", price:"650", img:"", about:"Авторский тропический лимонад с манго и маракуйей. Литр на компанию." },
-    { name:"Лимонад барбарис-клубника", desc:"Авторский", vol:"1 л", price:"650", img:"", about:"Авторский ягодный лимонад со вкусом барбариса и клубники. Литр на компанию." },
-    { name:"Мохито", desc:"Авторский лимонад", vol:"1 л", price:"650", img:"", about:"Безалкогольный мохито с лаймом и мятой. Литр на компанию." },
-    { name:"Морс клюквенный", vol:"1 л", price:"300", img:"", about:"Кисло-сладкий ягодный морс из клюквы." },
-    { name:"Морс брусничный", vol:"1 л", price:"300", img:"", about:"Ягодный морс из брусники с лёгкой терпкостью." },
-    { name:"Сок яблочный", vol:"1,3 л", price:"250", img:"", about:"Яблочный сок, 1,3 литра на компанию." },
-    { name:"Сок цитрусовый", vol:"1,3 л", price:"250", img:"", about:"Цитрусовый сок, 1,3 литра на компанию." },
-    { name:"Сок мультифрукт", vol:"1,3 л", price:"250", img:"", about:"Мультифруктовый сок, 1,3 литра на компанию." },
-    { name:"Кола", vol:"0,33 л", price:"150", img:"", about:"Классическая кола." },
-    { name:"Спрайт", vol:"0,33 л", price:"150", img:"", about:"Газированный напиток со вкусом лимона и лайма." },
-    { name:"Фанта", vol:"0,33 л", price:"150", img:"", about:"Апельсиновая газировка." },
-    { name:"Adrenaline Rush", vol:"0,5 л", price:"250", img:"", about:"Энергетический напиток." },
-    { name:"Вода без газа", vol:"0,5 л", price:"100", img:"", about:"Питьевая вода без газа." },
-    { name:"Вода с газом", vol:"0,5 л", price:"100", img:"", about:"Газированная питьевая вода." },
+  {"id": "cold", "title": "Холодные напитки", "desc": "Лимонады, морсы, соки", "items": [
+    {"name": "Лимонад", "desc": "Яблоко-киви, Манго-маракуйя, Барбарис-клубника, Мохито", "variants": [{"name": "Яблоко-киви", "about": "Авторский лимонад с яблоком и киви: свежий, кисло-сладкий.", "vol": "1 л", "price": "650"}, {"name": "Манго-маракуйя", "about": "Авторский тропический лимонад с манго и маракуйей.", "vol": "1 л", "price": "650"}, {"name": "Барбарис-клубника", "about": "Авторский ягодный лимонад со вкусом барбариса и клубники.", "vol": "1 л", "price": "650"}, {"name": "Мохито", "about": "Безалкогольный мохито с лаймом и мятой.", "vol": "1 л", "price": "650"}]},
+    {"name": "Морс", "desc": "Клюквенный, Брусничный", "variants": [{"name": "Клюквенный", "about": "Кисло-сладкий ягодный морс из клюквы.", "vol": "1 л", "price": "300"}, {"name": "Брусничный", "about": "Ягодный морс из брусники с лёгкой терпкостью.", "vol": "1 л", "price": "300"}]},
+    {"name": "Сок", "desc": "Яблочный, Цитрусовый, Мультифрукт", "variants": [{"name": "Яблочный", "about": "Яблочный сок.", "vol": "1,3 л", "price": "250"}, {"name": "Цитрусовый", "about": "Цитрусовый сок.", "vol": "1,3 л", "price": "250"}, {"name": "Мультифрукт", "about": "Мультифруктовый сок.", "vol": "1,3 л", "price": "250"}]},
+    {"name": "Газированые напитки", "desc": "Кола, Sprite, Fanta", "variants": [{"name": "Кола", "about": "Классическая кола.", "vol": "0,33 л", "price": "150"}, {"name": "Sprite", "about": "Газированный напиток со вкусом лимона и лайма.", "vol": "0,33 л", "price": "150"}, {"name": "Fanta", "about": "Апельсиновая газировка.", "vol": "0,33 л", "price": "150"}]},
+    {"name": "Adrenaline Rush", "about": "Энергетический напиток.", "vol": "0,5 л", "price": "250"},
+    {"name": "Вода", "desc": "Без газа, С газом", "variants": [{"name": "Без газа", "about": "Питьевая вода без газа.", "vol": "0,5 л", "price": "100"}, {"name": "С газом", "about": "Газированная питьевая вода.", "vol": "0,5 л", "price": "100"}]},
   ]},
-  { id:"beer", title:"Пиво", note:"Только для гостей старше 18 лет.", items:[
-    { name:"Bud", vol:"0,5 л", price:"200", img:"", about:"Светлый лагер: лёгкий и освежающий." },
-    { name:"Hoegaarden", price:"200", img:"", about:"Бельгийское пшеничное нефильтрованное пиво с нотами кориандра и апельсиновой цедры." },
-    { name:"Козел светлый", price:"200", img:"", about:"Чешский светлый лагер с мягкой хмелевой горчинкой." },
-    { name:"Козел тёмный", price:"200", img:"", about:"Тёмный лагер с карамельными и солодовыми нотами." },
-    { name:"Амстердам", price:"200", img:"", about:"Пиво Amsterdam. Сорт уточняйте у персонала." },
-    { name:"Corona Extra", desc:"Импортное", vol:"0,33 л", price:"250", about:"Мексиканский светлый лагер, лёгкий и освежающий." },
-    { name:"Guinness", desc:"Импортное, азотированное", price:"400", img:"", about:"Ирландский тёмный стаут. Азот даёт плотную кремовую пену и бархатный вкус." },
+  {"id": "beer", "title": "Пиво", "desc": "Светлое, тёмное, импортное", "note": "Только для гостей старше 18 лет.", "items": [
+    {"name": "Bud", "about": "Светлый лагер: лёгкий и освежающий.", "vol": "0,5 л", "price": "200"},
+    {"name": "Hoegaarden", "about": "Бельгийское пшеничное нефильтрованное пиво с нотами кориандра и апельсиновой цедры.", "price": "200"},
+    {"name": "Kozel светлый", "about": "Чешский светлый лагер с мягкой хмелевой горчинкой.", "price": "200"},
+    {"name": "Kozel тёмный", "about": "Тёмный лагер с карамельными и солодовыми нотами.", "price": "200"},
+    {"name": "Амстердам", "about": "Пиво Amsterdam. Сорт уточняйте у персонала.", "price": "200"},
+    {"name": "Corona Extra", "desc": "Импортное", "about": "Мексиканский светлый лагер, лёгкий и освежающий.", "vol": "0,33 л", "price": "250"},
+    {"name": "Guinness", "desc": "Импортное, азотированное", "about": "Ирландский тёмный стаут. Азот даёт плотную кремовую пену и бархатный вкус.", "price": "400"},
   ]},
-  { id:"snacks", title:"Снеки", items:[
-    { name:"Пивная тарелка", desc:"Чипсы картофельные, сыр-косичка, жареный арахис, вяленые колбаски, крендели", price:"", img:"",
-      about:"Тарелка закусок к пиву на компанию: картофельные чипсы, сыр-косичка, жареный арахис, вяленые колбаски и крендели." },
-    { name:"Чипсы", vol:"70 г", price:"170", img:"", about:"Картофельные чипсы, 70 г." },
-    { name:"Фисташки", price:"", img:"", about:"Фисташки к пиву." },
-    { name:"Кальмары сушёные", price:"", img:"", about:"Сушёные кальмары, классическая закуска к пиву." },
-    { name:"Сыр-косичка", price:"", img:"", about:"Солёный сыр-косичка к пиву." },
-    { name:"Вяленые колбаски", price:"", img:"", about:"Вяленые мясные колбаски к пиву." },
+  {"id": "snacks", "title": "Снеки", "desc": "Закуски к пиву", "items": [
+    {"name": "Пивная тарелка", "desc": "Чипсы картофельные, сыр-косичка, жареный арахис, вяленые колбаски, крендели", "about": "Тарелка закусок к пиву на компанию: картофельные чипсы, сыр-косичка, жареный арахис, вяленые колбаски и крендели."},
+    {"name": "Чипсы", "about": "Картофельные чипсы.", "vol": "70 г", "price": "170"},
+    {"name": "Фисташки", "about": "Фисташки к пиву."},
+    {"name": "Кальмары сушёные", "about": "Сушёные кальмары, классическая закуска к пиву."},
+    {"name": "Сыр-косичка", "about": "Солёный сыр-косичка к пиву."},
+    {"name": "Вяленые колбаски", "about": "Вяленые мясные колбаски к пиву."},
   ]},
-  { id:"extra", title:"Дополнительно", items:[
-    { name:"Продление работы на 1 час", price:"3000", img:"", about:"Заведение работает для вас на час дольше обычного времени закрытия." },
-    { name:"PlayStation", vol:"1 час", price:"150", img:"", about:"Игровая приставка. Цена за 1 час." },
-    { name:"Настольные игры", price:"0", img:"", about:"Попросите любую игру у администратора, это бесплатно." },
+  {"id": "extra", "title": "Дополнительно", "desc": "PlayStation, игры, продление", "items": [
+    {"name": "PlayStation", "about": "Игровая приставка. Цена за 1 час.", "vol": "1 час", "price": "150"},
+    {"name": "Продление заведения", "vol": "1 час", "price": "3000"},
+    {"name": "Настольные игры", "about": "Попросите любую игру у администратора, это бесплатно.", "price": "0"},
   ]},
-  { id:"regulars", title:"Постоянным гостям", note:"Специальные цены для постоянных гостей.", items:[
-    { name:"Паровой коктейль", price:"1000", img:"", about:"Кальян по специальной цене для постоянных гостей." },
-    { name:"Перезабивка парового коктейля", price:"600", img:"", about:"Новая забивка для уже поданного кальяна по цене для постоянных гостей." },
-    { name:"Чай", vol:"1 л|2 л", price:"150|300", img:"", about:"Чай в чайнике по цене для постоянных гостей. Вкусы уточняйте у персонала." },
+  {"id": "regulars", "title": "Постоянным гостям", "desc": "Специальные цены", "note": "Специальные цены для постоянных гостей.", "items": [
+    {"name": "Перезабивка парового коктейля", "about": "Новая забивка для уже поданного кальяна по цене для постоянных гостей.", "price": "600"},
+    {"name": "Паровой коктейль", "about": "Кальян по специальной цене для постоянных гостей.", "price": "1000"},
+    {"name": "Чай", "about": "Чай в чайнике по цене для постоянных гостей. Вкусы уточняйте у персонала.", "vol": "1 л|2 л", "price": "150|300"},
   ]},
 ];
 
@@ -766,18 +752,52 @@ function priceHTML(p){
   const n = /^\d+$/.test(s) ? Number(s).toLocaleString("ru-RU").replace(/\s/g, "\u00A0") : esc(s);
   return `${n}<span class="rub">₽</span>`;
 }
+/* в списке позиций — только фото (видео не грузим, чтобы не тратить трафик гостя) */
 function thumbHTML(it){
   return it.img
-    ? `<img src="${esc(still(it.img))}" alt="" loading="lazy" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">`
+    ? `<img src="${esc(it.img)}" alt="" loading="lazy" data-ph="${esc(initials(it.name))}">`
     : `<span class="ph" aria-hidden="true">${initials(it.name)}</span>`;
+}
+
+/* --- фото + видео --- */
+const isVid = s => /\.(mp4|webm|mov)(\?.*)?$/i.test(s || "");
+/* видео не показываем, если гость включил экономию трафика или «уменьшить движение» */
+const NO_VIDEO = matchMedia("(prefers-reduced-motion: reduce)").matches || !!(navigator.connection && navigator.connection.saveData);
+/* фото (img) снизу, видео (video.vid) сверху; при eager картинка грузится сразу, иначе — когда понадобится */
+function mediaHTML(m, cls, { eager = false, alt = "", extra = "" } = {}){
+  const img = m.img ? `<img class="${cls}" src="${esc(m.img)}" alt="${esc(alt)}"${eager ? "" : ' loading="lazy"'}${extra}>` : "";
+  const vid = m.vid && !NO_VIDEO
+    ? `<video class="${cls} vid${m.img ? "" : " on"}" src="${esc(m.vid)}"${m.img ? ` poster="${esc(m.img)}"` : ""} muted loop playsinline autoplay preload="${eager ? "auto" : "metadata"}" aria-hidden="true"></video>`
+    : "";
+  return img + vid;
+}
+/* следим за видео: заиграло — проявляем поверх фото; ошибка или не заиграло за VIDEO_WAIT с момента,
+   как стало видно на экране, — убираем, остаётся фото */
+const vidIO = new IntersectionObserver(es => es.forEach(e => {
+  const v = e.target;
+  if (!e.isIntersecting || v.classList.contains("on")) return;
+  v.play().catch(() => {});
+  if (!v._t) v._t = setTimeout(() => { if (!v.classList.contains("on")) dropVideo(v); }, VIDEO_WAIT);
+}));
+function dropVideo(v){
+  vidIO.unobserve(v); clearTimeout(v._t);
+  const hasPhoto = v.previousElementSibling && v.previousElementSibling.tagName === "IMG";
+  if (hasPhoto) { v.removeAttribute("src"); v.load(); v.remove(); }
+}
+function watchVideos(root){
+  root.querySelectorAll("video.vid:not([data-w])").forEach(v => {
+    v.dataset.w = "1";
+    v.addEventListener("playing", () => { clearTimeout(v._t); v.classList.add("on"); vidIO.unobserve(v); }, { once: true });
+    v.addEventListener("error", () => dropVideo(v), { once: true });
+    if (!v.classList.contains("on")) vidIO.observe(v);
+  });
 }
 
 let flat = [];
 function render(menu){
   flat = [];
-  const main = $("#menu"), nav = $("#nav");
+  const main = $("#menu");
   main.innerHTML = "";
-  nav?.querySelectorAll(".chip:not(.chip--home)").forEach(c => c.remove());
   menu.forEach((sec, si) => {
     const s = document.createElement("section");
     s.className = "section"; s.id = sec.id; s.dataset.title = sec.title;
@@ -786,7 +806,10 @@ function render(menu){
     if (sec.note) html += `<p class="section__note">${esc(sec.note)}</p>`;
     html += `<div class="list">`;
     sec.items.forEach((it, ii) => {
-      const idx = flat.push({ ...it, img: it.img || sec.img || "", secImg: sec.img || "", fb: "", cat: sec.title }) - 1;
+      /* у позиции нет ни фото, ни видео — показываем фото и видео её раздела */
+      const own = it.img || it.vid;
+      const idx = flat.push({ ...it, img: own ? it.img || "" : sec.img || "", vid: own ? it.vid || "" : sec.vid || "",
+        secImg: sec.img || "", secVid: sec.vid || "", cat: sec.title }) - 1;
       const itx = flat[idx];
       const vols = split(it.vol), prices = split(it.price);
       const delay = `style="animation-delay:${120 + Math.min(ii,8)*50}ms"`;   /* начинают, когда шторка почти доехала */
@@ -794,9 +817,7 @@ function render(menu){
         const allP = (it.variants ? it.variants.flatMap(v => split(v.price)) : prices).map(x => parseFloat(String(x).replace(/\s/g, ""))).filter(n => !isNaN(n));
         const fPrice = allP.length ? `${new Set(allP).size > 1 ? "от " : ""}${priceHTML(String(Math.min(...allP)))}` : priceHTML(prices[0]);
         html += `<div class="feature" role="button" tabindex="0" data-i="${idx}" ${delay}>
-          ${it.banner ? (isVid(it.banner) ? `<video class="feature__img" src="${esc(it.banner)}" poster="${esc(still(it.banner))}" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>` : `<img class="feature__img" src="${esc(still(it.banner))}" alt="">`) : `<svg class="feature__smoke" viewBox="0 0 200 200" aria-hidden="true">
-            <g><circle cx="100" cy="100" r="80"/><circle cx="120" cy="90" r="55"/></g>
-            <g><circle cx="90" cy="110" r="65"/><circle cx="110" cy="100" r="30"/></g></svg>`}
+          ${mediaHTML({ img: it.banner || "", vid: it.bannerVid || "" }, "feature__img")}
           <p class="feature__label">Фирменная позиция</p>
           <p class="feature__name">${esc(it.name)}</p>
           <div class="feature__row"><span class="feature__price">${fPrice}</span>
@@ -828,19 +849,10 @@ function render(menu){
     main.appendChild(s);
   });
   renderCats(menu);
-  if (typeof initFX === "function") requestAnimationFrame(initFX);
+  watchVideos(document);
   if (menuLive) { syncCart(); paintBar(); }   /* сверяем корзину только с меню из таблицы, не со встроенным */
   paintBadges();
 }
-const CAT_DESC = {
-  "Кальян":"Паровой коктейль на ваш вкус",
-  "Горячие напитки":"Чай в чайниках и кофе",
-  "Холодные напитки":"Лимонады, морсы, соки",
-  "Пиво":"Светлое, тёмное, импортное",
-  "Снеки":"Закуски к пиву",
-  "Дополнительно":"PlayStation, игры, продление",
-  "Постоянным гостям":"Специальные цены",
-};
 function minPrice(sec){
   /* у позиций со вкусами цены лежат во вкусах — их тоже учитываем */
   const ns = sec.items.flatMap(it => it.variants ? it.variants.flatMap(v => split(v.price)) : split(it.price))
@@ -851,29 +863,20 @@ function renderCats(menu){
   /* раскладка: первая карточка высокая (слева, 2 ряда), дальше по две в ряд; если последней не хватает пары — она во всю ширину */
   const lone = menu.length > 3 && (menu.length - 3) % 2 === 1;
   $("#catsGrid").innerHTML = menu.map((s, i) => {
-    const img = s.img || "";
     const mp = minPrice(s);
     const cls = i === 0 ? " cat--tall" : (lone && i === menu.length - 1 ? " cat--wide" : "");
     const letter = esc((s.title.trim()[0] || "").toUpperCase());
-    return `<button class="cat${cls}" type="button" data-cat="${s.id}" style="animation-delay:${250 + i*70}ms">
+    return `<button class="cat${cls}" type="button" data-cat="${esc(s.id)}" style="animation-delay:${250 + i*70}ms">
       <span class="cat__count">${s.items.length}</span>
-      ${!img ? `<span class="cat__ph" aria-hidden="true">${letter}</span>`
-        : isVid(img)   /* живая карточка: видео без звука по кругу, до загрузки — картинка с тем же именем .jpg */
-        ? `<video class="cat__img" src="${esc(img)}" poster="${esc(still(img))}" autoplay muted loop playsinline preload="${i < 3 ? "auto" : "metadata"}" aria-hidden="true"></video>`
-        : `<img class="cat__img" src="${esc(img)}" alt="" loading="${i < 3 ? "eager" : "lazy"}" data-cat-ph="${letter}">`}
-      <canvas class="fx" aria-hidden="true"></canvas>
-      <span class="cat__txt"><b>${esc(s.title)}</b>${(s.desc || CAT_DESC[s.title]) ? `<small>${esc(s.desc || CAT_DESC[s.title])}</small>` : ""}
+      ${s.img || s.vid ? mediaHTML(s, "cat__img", { eager: i < 3, extra: ` data-cat-ph="${letter}"` })
+        : `<span class="cat__ph" aria-hidden="true">${letter}</span>`}
+      <span class="cat__txt"><b>${esc(s.title)}</b>${s.desc ? `<small>${esc(s.desc)}</small>` : ""}
       ${mp ? `<em>от ${fmt(mp)} ₽</em>` : ""}</span>
     </button>`;
   }).join("");
   requestAnimationFrame(fitCatImgs);
 }
 /* квадратная карточка: центр фото — посередине свободного места над текстом (одна строка названия или две — неважно) */
-/* видео карточки не загрузилось — оставляем картинку */
-document.addEventListener("error", e => {
-  const v = e.target; if (!(v instanceof HTMLVideoElement) || !v.classList.contains("cat__img")) return;
-  const im = document.createElement("img"); im.className = "cat__img"; im.alt = ""; im.src = v.poster; im.style.top = v.style.top; v.replaceWith(im);
-}, true);
 function fitCatImgs(){
   document.querySelectorAll(".cat:not(.cat--tall):not(.cat--wide) .cat__img").forEach(im => {
     const card = im.closest(".cat"), txt = card.querySelector(".cat__txt");
@@ -977,28 +980,21 @@ catBg.addEventListener("click", uiClose);
 
 /* --- карточка позиции --- */
 const sheet = $("#sheet"), sheetBg = $("#sheetBg");
-/* фото в карточке позиции; у вкуса — своё фото, а если его нет — фото раздела (не фото соседнего вкуса) */
-/* видео вкуса: в колонке «Фото» имя .mp4/.webm; рядом должна лежать картинка с тем же именем .jpg */
-const isVid = s => /\.(mp4|webm)(\?.*)?$/i.test(s || "");
-const still = s => isVid(s) ? s.replace(/\.(mp4|webm)(\?.*)?$/i, ".jpg$2") : (s || "");
-function sheetPhoto(it, vi){
+/* фото и видео в карточке позиции; у вкуса — свои, а если их нет — раздела (не соседнего вкуса) */
+function sheetMedia(it, vi){
   const v = it.variants ? it.variants[vi] : null;
-  return v ? (v.img || it.secImg || "") : (it.img || "");
+  if (!v) return { img: it.img || "", vid: it.vid || "" };
+  return v.img || v.vid ? { img: v.img || "", vid: v.vid || "" } : { img: it.secImg || "", vid: it.secVid || "" };
 }
 function setSheetImg(it, vi, animate){
-  const box = $("#sheetImg"), src = sheetPhoto(it, vi);
-  const old = [...box.querySelectorAll("img,video,.ph")];
-  if (animate && old.length === 1 && old[0].getAttribute("src") === src) return;     /* то же фото — ничего не меняем */
-  const sw = animate ? ' class="swap-in"' : "";
-  box.insertAdjacentHTML("beforeend", !src
-    ? `<span class="ph${animate ? " swap-in" : ""}" aria-hidden="true">${initials(it.name)}</span>`
-    : isVid(src)   /* видео: без звука, по кругу; пока грузится — картинка с тем же именем (.jpg) */
-    ? `<video src="${esc(src)}" poster="${esc(still(src))}" autoplay muted loop playsinline preload="auto" aria-label="${esc(it.name)}"${sw}></video>`
-    : `<img src="${esc(src)}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}"${sw}>`);
-  const vid = box.lastElementChild;
-  if (vid.tagName === "VIDEO") vid.addEventListener("error", () => {           /* видео не загрузилось → показываем картинку */
-    vid.insertAdjacentHTML("afterend", `<img src="${esc(still(src))}" alt="${esc(it.name)}" data-fb="${esc(it.fb || "")}" data-ph="${esc(initials(it.name))}">`); vid.remove();
-  }, { once: true });
+  const box = $("#sheetImg"), m = sheetMedia(it, vi), key = m.img + "|" + m.vid;
+  const old = [...box.querySelectorAll(".sheet__media,.ph")];
+  if (animate && old.length === 1 && old[0].dataset.key === key) return;     /* то же фото — ничего не меняем */
+  const sw = animate ? " swap-in" : "";
+  box.insertAdjacentHTML("beforeend", !m.img && !m.vid
+    ? `<span class="ph${sw}" aria-hidden="true">${initials(it.name)}</span>`
+    : `<span class="sheet__media${sw}" data-key="${esc(key)}">${mediaHTML(m, "", { eager: true, alt: it.name, extra: ` data-ph="${esc(initials(it.name))}"` })}</span>`);
+  watchVideos(box);
   if (!animate) old.forEach(n => n.remove());
   else setTimeout(() => old.forEach(n => n.remove()), 450);                             /* старое уходит, когда новое проявилось */
 }
@@ -1187,17 +1183,33 @@ function parseCSV(text){
   if (cell || row.length) { row.push(cell); rows.push(row); }
   return rows;
 }
-/* ссылка из таблицы → адрес картинки: Google Диск, обычная ссылка, путь (img/…) или имя файла.
-   Имя файла: позиции — в папке img/items, разделы — в img/categories */
-const ASSET_V = "2611201925" + "." + Math.floor(Date.now() / 60000);   /* метка для картинок: меняется каждую минуту при открытии сайта — замена файла на GitHub видна сразу, без нового index.html */
+/* ссылка из таблицы → адрес файла: Google Диск (только фото), обычная ссылка https://… или имя файла.
+   Имя файла ищется в своей папке (dir): позиции — img/items, разделы — img/categories, баннеры — img/banners.
+   Кэш: GitHub Pages отдаёт файлы с max-age=600, поэтому замена файла на GitHub видна гостям в течение ~10 минут,
+   а при повторном открытии меню картинки и видео не скачиваются заново. */
 function photoURL(v, dir = "img/items/"){
   v = String(v || "").trim(); if (!v) return "";
   const d = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/) || v.match(/^([\w-]{25,})$/);
   if (d) return `https://drive.google.com/thumbnail?id=${d[1]}&sz=w1000`;
-  if (/^(https?:|data:)/.test(v)) return v;
-  v = v.replace(/^\/+/, "");
-  if (!/\.\w{2,5}$/.test(v)) v += ".jpg";                       /* имя без расширения — считаем, что это .jpg */
-  return (v.includes("/") ? v : dir + v) + "?v=" + ASSET_V;      /* метка версии: после новой загрузки телефон берёт свежие картинки, а не старые из памяти */
+  if (/^https:\/\//i.test(v)) return v;
+  v = v.replace(/^.*\//, "");                                    /* только имя файла: папку определяет колонка */
+  if (!/\.\w{2,5}$/.test(v)) v += ".jpg";                        /* имя без расширения — считаем, что это .jpg */
+  return dir + encodeURIComponent(v);
+}
+/* фото + видео из пары колонок. Старый формат (видео прямо в «Фото») тоже понимается: фото — то же имя с .jpg */
+function mediaOf(photo, video, dir){
+  let img = photoURL(photo, dir), vid = photoURL(video, dir);
+  if (isVid(img)) { if (!vid) vid = img; img = img.replace(/\.\w+$/, ".jpg"); }
+  if (vid && !isVid(vid)) vid = "";                              /* в «Видео» не видео — пропускаем */
+  return { img, vid };
+}
+/* «Позиция: файл, Позиция: файл» (баннеры) → [{ name, file }] */
+function namedList(txt){
+  return String(txt || "").split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).map(x => {
+    if (/^https?:/i.test(x)) return { name: "", file: x };
+    const i = x.search(/[:=—–]/);
+    return i > 0 ? { name: x.slice(0, i).trim().toLowerCase(), file: x.slice(i + 1).trim() } : { name: "", file: x };
+  });
 }
 /* CSV → массив объектов по названиям колонок (порядок колонок в таблице не важен) */
 function table(text){
@@ -1233,9 +1245,10 @@ function groupVariants(items){
     if (g.length === 1) return g[0];
     const base = g.find(x => x.price !== "") || g[0];                 /* цену ищем во всех строках группы, и в скрытых тоже */
     const variants = shown.map(x => ({ name: x.desc || x.name, about: x.about || "",
-      vol: x.price !== "" ? x.vol : base.vol, price: x.price !== "" ? x.price : base.price, img: x.img || "" }));
+      vol: x.price !== "" ? x.vol : base.vol, price: x.price !== "" ? x.price : base.price, img: x.img || "", vid: x.vid || "" }));
+    const first = shown.find(x => x.img || x.vid) || {};               /* фото позиции в списке — первого вкуса, у которого оно есть */
     return { name: g[0].name, desc: variants.map(v => v.name).join(", "), about: "", vol: "", price: "",
-      img: (g.find(x => x.img) || {}).img || "", variants };
+      img: first.img || "", vid: first.vid || "", variants };
   }).filter(Boolean);
 }
 
@@ -1244,10 +1257,13 @@ function buildMenu(menuRows, secRows){
   secRows.forEach(s => {
     const t = pick(s, "раздел"); if (!t) return;
     order.push(t);
-    secInfo.set(t, { desc: pick(s, "описание"), img: photoURL(pick(s, "фото"), "img/categories/"), banners: pick(s, "баннер").split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).map(x => {   /* «Позиция: файл» через запятую — в этом порядке и идут баннеры */
-      const m = x.match(/^(.+?)\s*[:=—–]\s*([^:=]+)$/);
-      return m ? { name: m[1].trim().toLowerCase(), img: photoURL(m[2], "img/banners/") } : { name: "", img: photoURL(x, "img/banners/") };
-    }), note: pick(s, "пометка") });
+    /* баннеры: «Позиция: файл» через запятую — в этом порядке они и идут; видео баннера ищется по той же позиции */
+    const vids = namedList(pick(s, "видео баннера"));
+    const banners = namedList(pick(s, "баннер")).map((b, i) => {
+      const v = b.name ? vids.find(x => x.name === b.name) : vids[i];
+      return { name: b.name, ...mediaOf(b.file, v ? v.file : "", "img/banners/") };
+    });
+    secInfo.set(t, { desc: pick(s, "описание"), ...mediaOf(pick(s, "фото"), pick(s, "видео"), "img/categories/"), banners, note: pick(s, "пометка") });
   });
   const map = new Map();
   let lastCat = "", lastName = "";
@@ -1275,7 +1291,7 @@ function buildMenu(menuRows, secRows){
       vols.push(v); prices.push(pr);
     });
     map.get(cat).push({ name, desc: sub, about: pick(r, "подробно"),
-      vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), img: photoURL(pick(r, "фото")), hidden });
+      vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), ...mediaOf(pick(r, "фото"), pick(r, "видео"), "img/items/"), hidden });
   });
   [...map.keys()].forEach(t => { const items = groupVariants(map.get(t)); if (items.length) map.set(t, items); else map.delete(t); });  /* раздел, где всё скрыто, не показываем */
   const titles = [...order.filter(t => map.has(t)), ...[...map.keys()].filter(t => !order.includes(t))];
@@ -1285,15 +1301,16 @@ function buildMenu(menuRows, secRows){
     const bn = info.banners || [], feats = [];
     bn.forEach(b => {                          /* баннер с названием — к этой позиции; без названия — к следующей по порядку позиции без баннера */
       const it = b.name ? items.find(x => !x.feature && x.name.trim().toLowerCase() === b.name) : items.find(x => !x.feature);
-      if (it) { it.feature = true; it.banner = b.img; feats.push(it); }
+      if (it) { it.feature = true; it.banner = b.img; it.bannerVid = b.vid; feats.push(it); }
     });
     if (feats.length) items.splice(0, items.length, ...feats, ...items.filter(x => !x.feature));   /* баннеры — сверху, в порядке из таблицы */
-    else if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;
+    else if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;   /* баннеров нет — первая позиция «Кальяна» большой карточкой */
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
-      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "" };
+      tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "", vid: info.vid || "" };
   });
 }
-const MENU_CACHE = "incognito-menu-cache-v1";
+const MENU_CACHE = "incognito-menu-cache-v2";   /* v2: фото и видео в разных колонках */
+try { localStorage.removeItem("incognito-menu-cache-v1"); } catch (e) {}
 let menuLive = false;
 async function loadSheet(){
   if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
@@ -1573,9 +1590,11 @@ const SHORT = "а|в|во|и|к|ко|о|об|с|со|у|на|не|ни|но|по
 const RE_SHORT = new RegExp(`(^|[\\s(«„"—–-])(${SHORT})\\s+`, "gi");
 const RE_UNIT = /(\d)\s+(л|г|мл|кг|мин|минут|час|часа|часов|₽|руб|шт)(?=[\s.,)]|$)/g;
 const RE_DASH = /\s+([—–])\s/g;
+const RE_PHONE = /\+7[\d\s()-]{10,}\d/g;   /* телефон не переносится: неразрывные пробелы и дефисы */
 function typo(s){
   return s.replace(RE_SHORT, (m, a, w) => a + w + " ").replace(RE_SHORT, (m, a, w) => a + w + " ")
-          .replace(RE_UNIT, "$1 $2").replace(RE_DASH, " $1 ");
+          .replace(RE_UNIT, "$1 $2").replace(RE_DASH, " $1 ")
+          .replace(RE_PHONE, p => p.replace(/\s/g, "\u00A0").replace(/-/g, "\u2060-\u2060"));
 }
 function typoTree(root){
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n =>
@@ -1587,101 +1606,12 @@ new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
   if (n.nodeType === 1) typoTree(n); else if (n.nodeType === 3 && n.parentElement) typoTree(n.parentElement);
 }))).observe(document.body, { childList: true, subtree: true });
 
-/* =====================================================================
-   ЖИВЫЕ КАРТОЧКИ: дым, пар, пузырьки, свечение + наклон за пальцем.
-   Точки привязаны к фото (доли ширины/высоты кадра).
-   ===================================================================== */
-const FX = {};   /* анимации на карточках разделов выключены: фото статичные */
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const fxList = [];
-function attachFX(host, img, spec){
-  const cv = host.querySelector(".fx"); if (!cv || !img || reduceMotion) return;
-  const ctx = cv.getContext("2d");
-  const st = { host, img, cv, ctx, spec, parts: [], acc: spec.map(() => 0), visible: false, t0: performance.now() };
-  fxList.push(st);
-  io.observe(host);
-}
-const io = new IntersectionObserver(es => es.forEach(e => {
-  const st = fxList.find(s => s.host === e.target); if (st) st.visible = e.isIntersecting;
-}), { threshold: 0 });
-
-function frame(now){
-  for (const st of fxList) {
-    if (!st.visible || !st.host.offsetParent) continue;
-    const inSheet = st.host.closest(".sheet");
-    if (!inSheet && document.body.classList.contains("locked")) continue;   /* под шторкой — пауза */
-    const { cv, ctx, host, img } = st;
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    const W = host.clientWidth, H = host.clientHeight;
-    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    const hr = host.getBoundingClientRect(), ir = img.getBoundingClientRect();
-    let ix = ir.left - hr.left, iy = ir.top - hr.top, iw = ir.width, ih = ir.height;
-    if (img.naturalWidth) {  /* object-fit:cover — эффекты привязаны к самому снимку, а не к рамке */
-      const k = Math.max(iw / img.naturalWidth, ih / img.naturalHeight), nw = img.naturalWidth * k, nh = img.naturalHeight * k;
-      ix += (iw - nw) * .5; iy += (ih - nh) * .4; iw = nw; ih = nh;
-    }
-    const dt = Math.min(50, now - (st.last || now)) / 1000; st.last = now;
-    st.spec.forEach((s, k) => {
-      if (s.t === "glow") {
-        const a = .18 + .12 * Math.sin(now / 520) + .06 * Math.sin(now / 173);
-        const g = ctx.createRadialGradient(ix + s.x * iw, iy + s.y * ih, 0, ix + s.x * iw, iy + s.y * ih, s.r * iw);
-        g.addColorStop(0, `rgba(255,120,60,${a})`); g.addColorStop(1, "rgba(255,80,30,0)");
-        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-        return;
-      }
-      st.acc[k] += s.rate * 10 * dt;
-      while (st.acc[k] >= 1) {
-        st.acc[k] -= 1;
-        if (s.t === "bubbles") st.parts.push({ k, t:"b", x: s.x0 + Math.random() * (s.x1 - s.x0), y: s.y0, v: .08 + Math.random() * .08,
-          r: .4 + Math.random() * .7, ph: Math.random() * 6, life: 0, ymin: s.y1, dark: s.dark });
-        else st.parts.push({ k, t:"s", x: s.x + (Math.random() - .5) * .03, y: s.y, vx: (Math.random() - .5) * .03,
-          vy: -(s.t === "steam" ? .09 : .13) * (.75 + Math.random() * .5), r: (s.t === "steam" ? .025 : .035) * s.size, grow: (s.t === "steam" ? .06 : .10) * s.size,
-          life: 0, max: (s.t === "steam" ? 1.8 : 2.6) * (.8 + Math.random() * .4), ph: Math.random() * 6, a: s.t === "steam" ? .045 : .06 });
-      }
-    });
-    st.parts = st.parts.filter(p => {
-      p.life += dt;
-      if (p.t === "b") {
-        p.y -= p.v * dt; const x = ix + (p.x + Math.sin(p.ph + p.life * 3) * .004) * iw, y = iy + p.y * ih;
-        const fade = Math.min(1, (p.y - p.ymin) / .08, p.life / .5);
-        ctx.beginPath(); ctx.arc(x, y, p.r, 0, 6.283);
-        ctx.fillStyle = `rgba(255,${p.dark ? 225 : 245},${p.dark ? 185 : 215},${.32 * fade})`; ctx.fill();
-        return p.y > p.ymin;
-      }
-      const k = p.life / p.max; if (k >= 1) return false;
-      p.x += (p.vx + Math.sin(p.ph + p.life * 1.9) * .025) * dt; p.y += p.vy * dt; p.r += p.grow * dt;
-      const x = ix + p.x * iw, y = iy + p.y * ih, r = p.r * iw;
-      const a = p.a * Math.sin(Math.PI * Math.min(1, k * 1.15)) ;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, `rgba(228,228,222,${a})`); g.addColorStop(.6, `rgba(228,228,222,${a * .45})`); g.addColorStop(1, "rgba(228,228,222,0)");
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
-      return true;
-    });
-  }
-  requestAnimationFrame(frame);
-}
-if (!reduceMotion) requestAnimationFrame(frame);
-
-function initFX(){
-  fxList.length = 0; io.disconnect();
-  if (reduceMotion) return;
-  document.querySelectorAll("#catsGrid .cat").forEach(card => {
-    const title = card.querySelector(".cat__txt b")?.textContent.replace(/ /g, " ");
-    if (FX[title]?.some(s => s.t === "float")) card.classList.add("cat--float");
-    if (FX[title]?.some(s => s.t !== "float")) attachFX(card, card.querySelector(".cat__img"), FX[title].filter(s => s.t !== "float"));
-  });
-}
-
 /* фото не загрузилось: для Google Диска пробуем второй адрес, потом показываем заглушку */
 document.addEventListener("error", e => {
   const im = e.target; if (!(im instanceof HTMLImageElement)) return;
   const d = im.src.match(/drive\.google\.com\/thumbnail\?id=([\w-]+)/);
   if (d && !im.dataset.retry) { im.dataset.retry = "1"; im.src = `https://lh3.googleusercontent.com/d/${d[1]}=w1000`; return; }
-  /* файл не нашёлся (опечатка, нет на сервере) — показываем заглушку с буквой */
-  const fb = im.dataset.fb; im.dataset.fb = "";
-  if (fb && fb !== im.getAttribute("src")) { im.src = fb; return; }
+  /* файл не нашёлся (опечатка в имени, нет на GitHub) — показываем заглушку с буквой */
   if (im.classList.contains("cat__img")) {
     im.replaceWith(Object.assign(document.createElement("span"), { className: "cat__ph", textContent: im.dataset.catPh || "" }));
   } else if (im.dataset.ph !== undefined) {
