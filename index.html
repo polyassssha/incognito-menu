@@ -618,19 +618,24 @@ html.locked{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
 <script>
 /* =====================================================================
    НАСТРОЙКИ
-   Меню берётся из Google Таблицы (вкладки «Меню» и «Разделы»).
-   Таблица должна быть открыта по ссылке для просмотра («Все, у кого есть ссылка»).
-   Если таблица недоступна, показывается последнее загруженное меню, а если его нет — встроенное (MENU ниже).
-   SHEET_GIDS — номера вкладок: число после «gid=» в адресе, когда вкладка открыта.
+   Меню хранится в закрытой Google Таблице. Сайт получает его через скрипт Google (ORDER_URL + «?menu=1»):
+   скрипт отдаёт только вкладки «Меню», «Разделы», «Баннеры» и «График» — без заказов и служебных вкладок.
+   Если скрипт недоступен, показывается последнее загруженное меню, а если его нет — встроенное (MENU ниже).
    ===================================================================== */
-const SHEET_ID = "1Y99Y7D2Tst7Nj585W9rrruAH_Qe4LT-6AcQhtS6UFiU";
-const SHEET_GIDS = { menu: 0, sections: 160657347, banners: 2024161855 };   /* banners — вкладка «Баннеры» */
-const sheetURL = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
 
 /* Адрес для подвала. Пусто — строка не показывается. */
 const ADDRESS = "г. Бузулук, ул. Ново-Чапаевская, 11В";
 /* адрес скрипта Google, который пересылает заказы в Telegram. Пусто — заказ и вызов официанта выключены, список работает как памятка */
 const ORDER_URL = "https://script.google.com/macros/s/AKfycbzvhy1uNBUQPtJq5VSH4ggMZEZIqS3W5B1D1AiKKdsZR6DGfy7ALiALCiSX0oDBX5pc/exec";
+/* меню из таблицы — через тот же скрипт; один запрос на всё (меню, разделы, баннеры, часы работы) */
+const MENU_URL = ORDER_URL ? ORDER_URL + "?menu=1" : "";
+let feedP = null;
+const loadFeed = (fresh) => {
+  if (!MENU_URL || !/^https?:/.test(location.protocol)) return Promise.resolve(null);
+  if (!feedP || fresh) feedP = fetch(MENU_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null)
+    .then(j => j && j.ok && j.tabs ? j.tabs : null).catch(() => null);
+  return feedP;
+};
 /* Меню для просмотра: обычная ссылка без номера стола (или с ?view) — без корзины, заказа и вызова официанта.
    Заказывать можно только по QR-коду стола (?table=N). */
 const VIEW_ONLY = (() => {
@@ -1145,11 +1150,9 @@ function parseHours(rows){
 }
 async function loadHours(){
   try { const c = JSON.parse(localStorage.getItem(HOURS_CACHE)); if (c && typeof c === "object") { Object.assign(HOURS, c); renderHours(); } } catch (e) {}
-  if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(HOURS_SHEET)}`;
-    const r = await fetch(url, { cache: "no-store" }); if (!r.ok) return;
-    const h = parseHours(table(await r.text()));
+    const tabs = await loadFeed(); if (!tabs || !tabs[HOURS_SHEET]) return;
+    const h = parseHours(table(tabs[HOURS_SHEET]));
     if (Object.keys(h).length < 7) return;                          /* вкладки нет или заполнена не вся неделя — оставляем как было */
     Object.assign(HOURS, h); renderHours();
     try { localStorage.setItem(HOURS_CACHE, JSON.stringify(h)); } catch (e) {}
@@ -1327,12 +1330,10 @@ function buildMenu(menuRows, secRows, banRows = []){
 const MENU_CACHE = "incognito-menu-cache-v2";   /* v2: фото и видео в разных колонках */
 try { localStorage.removeItem("incognito-menu-cache-v1"); } catch (e) {}
 let menuLive = false;
-async function loadSheet(){
-  if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
+async function loadSheet(fresh){
   try {
-    const get = gid => fetch(sheetURL(gid), { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.text(); });
-    const [m, s, b] = await Promise.all([get(SHEET_GIDS.menu), SHEET_GIDS.sections != null ? get(SHEET_GIDS.sections).catch(() => "") : "",
-      SHEET_GIDS.banners != null ? get(SHEET_GIDS.banners).catch(() => "") : ""]);
+    const tabs = await loadFeed(fresh); if (!tabs || !tabs["Меню"]) return;
+    const m = tabs["Меню"], s = tabs["Разделы"] || "", b = tabs["Баннеры"] || "";
     const menu = buildMenu(table(m), s ? table(s) : [], b ? table(b) : []);
     if (!menu.length) return;
     const json = JSON.stringify(menu);
@@ -1501,9 +1502,11 @@ function openCart(){
 const TABLE_KEY = "incognito-table", CALL_KEY = "incognito-call-at";
 let tableNo = (() => {
   const q = new URLSearchParams(location.search), t = parseInt(q.get("table") || q.get("t") || q.get("стол"), 10);
-  if (t >= 1 && t <= 99) { try { sessionStorage.setItem(TABLE_KEY, t); } catch (e) {} return t; }
+  if (t >= 1 && t <= 99) { try { sessionStorage.setItem(TABLE_KEY, t); sessionStorage.setItem(TABLE_KEY + "-k", q.get("k") || ""); } catch (e) {} return t; }
   try { const v = parseInt(sessionStorage.getItem(TABLE_KEY), 10); return v >= 1 && v <= 99 ? v : 0; } catch (e) { return 0; }
 })();
+/* секретный код стола из QR-кода (?table=5&k=…): без него скрипт заказ не примет, поэтому номер стола вручную не меняется */
+const tableK = (() => { try { return sessionStorage.getItem(TABLE_KEY + "-k") || ""; } catch (e) { return ""; } })();
 let tableCb = null;
 function askTable(cb){
   tableCb = cb;
@@ -1537,19 +1540,22 @@ async function post(data){
 const ERR = {
   wait: "Заказ с этого стола только что отправлен. Подождите немного или позовите официанта.",
   table: "Проверьте номер стола.",
+  key: "Заказ принимается только по QR-коду на столе. Отсканируйте его ещё раз или позовите официанта.",
+  menu: "Меню только что обновилось. Обновите страницу, проверьте заказ и отправьте ещё раз.",
   network: "Нет связи. Проверьте интернет и попробуйте ещё раз.",
 };
 function paintOrder(){
   if (!ORDERING) return;
   $("#order").hidden = !cart.length;
-  $("#orderTable").innerHTML = tableNo ? `${tableNo} <em>изменить</em>` : "Указать";
+  $("#orderTable").innerHTML = tableNo ? (tableK ? `${tableNo}` : `${tableNo} <em>изменить</em>`) : "Указать";
+  $("#orderTable").disabled = !!(tableNo && tableK);
 }
 async function sendOrder(){
-  if (!menuLive) { $("#orderErr").textContent = "Меню ещё не загрузилось — проверьте интернет и попробуйте через минуту или позовите официанта."; loadSheet(); return; }
+  if (!menuLive) { $("#orderErr").textContent = "Меню ещё не загрузилось — проверьте интернет и попробуйте через минуту или позовите официанта."; loadSheet(true); return; }
   if (!tableNo) { askTable(sendOrder); return; }
   const b = $("#orderSend"), { sum, unknown } = totals();
   b.disabled = true; b.textContent = "Отправляем…"; $("#orderErr").textContent = "";
-  const r = await post({ type: "order", table: tableNo, total: sum, unknown,
+  const r = await post({ type: "order", table: tableNo, k: tableK, total: sum, unknown,
     items: cart.map(x => ({ name: x.name, vol: x.vol, cat: x.cat, q: x.q, price: x.price })) });
   b.disabled = false; b.textContent = "Отправить заказ";
   if (!r.ok) { $("#orderErr").textContent = ERR[r.error] || "Не получилось отправить. Попробуйте ещё раз или позовите официанта."; return; }
@@ -1573,7 +1579,7 @@ async function callWaiter(){
   }
   btn.dataset.armed = ""; clearTimeout(callArmT);
   toast("Зовём официанта…", 15000);
-  const r = await post({ type: "call", table: tableNo });
+  const r = await post({ type: "call", table: tableNo, k: tableK });
   if (r.ok || r.error === "wait") {
     try { sessionStorage.setItem(CALL_KEY, Date.now()); } catch (e) {}
     toast(`Официант идёт к столу ${tableNo}`);
