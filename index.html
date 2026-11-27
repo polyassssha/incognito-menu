@@ -624,7 +624,7 @@ html.locked{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
    SHEET_GIDS — номера вкладок: число после «gid=» в адресе, когда вкладка открыта.
    ===================================================================== */
 const SHEET_ID = "1Y99Y7D2Tst7Nj585W9rrruAH_Qe4LT-6AcQhtS6UFiU";
-const SHEET_GIDS = { menu: 0, sections: 160657347 };
+const SHEET_GIDS = { menu: 0, sections: 160657347, banners: 2024161855 };   /* banners — вкладка «Баннеры» */
 const sheetURL = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
 
 /* Адрес для подвала. Пусто — строка не показывается. */
@@ -646,7 +646,10 @@ const ORDERING = !!ORDER_URL && !VIEW_ONLY;
    Имя файла из таблицы ищется в папке на GitHub:
      «Меню»    — колонки «Фото» и «Видео»                  → img/items/
      «Разделы» — колонки «Фото» и «Видео»                  → img/categories/
-     «Разделы» — колонки «Баннер» и «Видео баннера»        → img/banners/
+     «Баннеры» — колонки «Фото» и «Видео», строка = баннер → img/banners/
+       (порядок строк = порядок баннеров; «Показывать» = нет — баннер выключен;
+        если вкладки «Баннеры» нет — старый формат: «Разделы» → «Баннер» и «Видео баннера»)
+   «Включить видео» (да/нет) рядом с «Видео»: пусто или «да» — играет видео, «нет» — показывается фото.
    Видео показывается поверх фото, только когда реально заиграло. Пока грузится, не загрузилось
    или грузится дольше VIDEO_WAIT — гость видит фото. */
 const VIDEO_WAIT = 8000;
@@ -1197,10 +1200,14 @@ function photoURL(v, dir = "img/items/"){
   return dir + encodeURIComponent(v);
 }
 /* фото + видео из пары колонок. Старый формат (видео прямо в «Фото») тоже понимается: фото — то же имя с .jpg */
-function mediaOf(photo, video, dir){
+/* «Включить видео»: пусто или «да» — видео включено (видео в приоритете), «нет» — показывается фото */
+const videoOn = v => !/^(нет|no|false|0|выкл|выключено|-)$/i.test(String(v || "").trim());
+function mediaOf(photo, video, dir, on = true){
   let img = photoURL(photo, dir), vid = photoURL(video, dir);
   if (isVid(img)) { if (!vid) vid = img; img = img.replace(/\.\w+$/, ".jpg"); }
   if (vid && !isVid(vid)) vid = "";                              /* в «Видео» не видео — пропускаем */
+  if (!img && vid) img = vid.replace(/\.\w+(\?.*)?$/, ".jpg$1");  /* фото не указано — берём кадр с тем же именем, что у видео */
+  if (!on) vid = "";                                             /* видео выключено — только фото */
   return { img, vid };
 }
 /* «Позиция: файл, Позиция: файл» (баннеры) → [{ name, file }] */
@@ -1252,18 +1259,26 @@ function groupVariants(items){
   }).filter(Boolean);
 }
 
-function buildMenu(menuRows, secRows){
+function buildMenu(menuRows, secRows, banRows = []){
   const secInfo = new Map(), order = [];
+  /* вкладка «Баннеры»: строка = баннер; порядок строк = порядок баннеров; «Показывать» = нет — баннера нет */
+  const banTab = banRows.filter(b => pick(b, "раздел") && pick(b, "позиция"));
+  const useBanTab = banTab.length > 0;
   secRows.forEach(s => {
     const t = pick(s, "раздел"); if (!t) return;
     order.push(t);
     /* баннеры: «Позиция: файл» через запятую — в этом порядке они и идут; видео баннера ищется по той же позиции */
-    const vids = namedList(pick(s, "видео баннера"));
-    const banners = namedList(pick(s, "баннер")).map((b, i) => {
-      const v = b.name ? vids.find(x => x.name === b.name) : vids[i];
-      return { name: b.name, ...mediaOf(b.file, v ? v.file : "", "img/banners/") };
-    });
-    secInfo.set(t, { desc: pick(s, "описание"), ...mediaOf(pick(s, "фото"), pick(s, "видео"), "img/categories/"), banners, note: pick(s, "пометка") });
+    let banners;
+    if (useBanTab) banners = banTab.filter(b => pick(b, "раздел").trim().toLowerCase() === t.trim().toLowerCase() && !/^нет$/i.test(pick(b, "показывать").trim()))
+      .map(b => ({ name: pick(b, "позиция").trim().toLowerCase(), ...mediaOf(pick(b, "фото"), pick(b, "видео"), "img/banners/", videoOn(pick(b, "включить видео"))) }));
+    else {   /* старый формат: баннеры списком в «Разделах» */
+      const vids = namedList(pick(s, "видео баннера"));
+      banners = namedList(pick(s, "баннер")).map((b, i) => {
+        const v = b.name ? vids.find(x => x.name === b.name) : vids[i];
+        return { name: b.name, ...mediaOf(b.file, v ? v.file : "", "img/banners/") };
+      });
+    }
+    secInfo.set(t, { desc: pick(s, "описание"), ...mediaOf(pick(s, "фото"), pick(s, "видео"), "img/categories/", videoOn(pick(s, "включить видео"))), banners, note: pick(s, "пометка") });
   });
   const map = new Map();
   let lastCat = "", lastName = "";
@@ -1291,7 +1306,7 @@ function buildMenu(menuRows, secRows){
       vols.push(v); prices.push(pr);
     });
     map.get(cat).push({ name, desc: sub, about: pick(r, "подробно"),
-      vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), ...mediaOf(pick(r, "фото"), pick(r, "видео"), "img/items/"), hidden });
+      vol: vols.join("|").replace(/\|+$/, ""), price: prices.join("|").replace(/\|+$/, ""), ...mediaOf(pick(r, "фото"), pick(r, "видео"), "img/items/", videoOn(pick(r, "включить видео"))), hidden });
   });
   [...map.keys()].forEach(t => { const items = groupVariants(map.get(t)); if (items.length) map.set(t, items); else map.delete(t); });  /* раздел, где всё скрыто, не показываем */
   const titles = [...order.filter(t => map.has(t)), ...[...map.keys()].filter(t => !order.includes(t))];
@@ -1304,7 +1319,7 @@ function buildMenu(menuRows, secRows){
       if (it) { it.feature = true; it.banner = b.img; it.bannerVid = b.vid; feats.push(it); }
     });
     if (feats.length) items.splice(0, items.length, ...feats, ...items.filter(x => !x.feature));   /* баннеры — сверху, в порядке из таблицы */
-    else if (i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;   /* баннеров нет — первая позиция «Кальяна» большой карточкой */
+    else if (!useBanTab && i === 0 && /кальян/i.test(t) && items[0] && !items[0].variants) items[0].feature = true;   /* баннеров нет (и нет вкладки «Баннеры») — первая позиция «Кальяна» большой карточкой */
     return { id: old.id || "s" + i, title: t, items, note: info.note || old.note || "",
       tips: old.tips, tipsTitle: old.tipsTitle, desc: info.desc || "", img: info.img || "", vid: info.vid || "" };
   });
@@ -1316,8 +1331,9 @@ async function loadSheet(){
   if (!SHEET_ID || !/^https?:/.test(location.protocol)) return;
   try {
     const get = gid => fetch(sheetURL(gid), { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.text(); });
-    const [m, s] = await Promise.all([get(SHEET_GIDS.menu), SHEET_GIDS.sections != null ? get(SHEET_GIDS.sections).catch(() => "") : ""]);
-    const menu = buildMenu(table(m), s ? table(s) : []);
+    const [m, s, b] = await Promise.all([get(SHEET_GIDS.menu), SHEET_GIDS.sections != null ? get(SHEET_GIDS.sections).catch(() => "") : "",
+      SHEET_GIDS.banners != null ? get(SHEET_GIDS.banners).catch(() => "") : ""]);
+    const menu = buildMenu(table(m), s ? table(s) : [], b ? table(b) : []);
     if (!menu.length) return;
     const json = JSON.stringify(menu);
     let cached = null; try { cached = localStorage.getItem(MENU_CACHE); } catch (e) {}
